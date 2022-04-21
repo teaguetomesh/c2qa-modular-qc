@@ -59,8 +59,8 @@ def heatmap(data, row_labels, col_labels, ax=None,
     ax.tick_params(which='minor', bottom=False, left=False)
     return im, cbar
 
-def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
-                     textcolors=("black", "white"),
+def annotate_heatmap(im, data=None, valfmt='{x:.2f}',
+                     textcolors=('black', 'white'),
                      threshold=None, **textkw):
     """
     A function to annotate a heatmap.
@@ -138,9 +138,8 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     im, cbar = heatmap(compilation_times/np.power(10,scale), module_sizes, num_modules, ax=ax,
-                    cmap='YlGn', cbarlabel='compilation time [$10^%d$ s]'%scale)
+                    cmap='YlGn', cbarlabel='Compilation Time [$10^%d$ s]'%scale)
     texts = annotate_heatmap(im, valfmt='{x:.1f}')
-
     fig.tight_layout()
     plt.savefig('qiskit_profile.pdf',dpi=400)
     plt.close()
