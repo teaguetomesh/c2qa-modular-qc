@@ -6,5 +6,8 @@ conda deactivate && conda activate rl
 pip install qiskit numpy matplotlib networkx
 ```
 
-## TODO
-- [ ] Implement initial qubit partition
+## Qubit Partition
+- [ ] device topology --> source graph
+- [ ] source graph --> target architecture graph (amk_grf)
+- [x] Circuit --> source graph
+- [ ] Static mapping

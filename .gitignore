@@ -13,6 +13,8 @@ gurobi.log
 variables.*
 *.pdf
 *.slurm
+*source*.txt
+*target*.txt
 
 breakout-saves
 tensorboard
