@@ -76,5 +76,7 @@ def write_source_graph_file(graph, fname):
     graph_file.close()
     # subprocess.call(['/home/weit/scotch/build/bin/gtst','workspace/%s_source.txt'%fname])
 
-def write_target_graph_file(fname):
+def write_target_graph_file(graph, fname):
+    write_source_graph_file(graph=graph, fname='device')
     subprocess.call(['/home/weit/scotch/build/bin/amk_grf','workspace/%s_source.txt'%fname,'workspace/%s_target.txt'%fname])
+    subprocess.call(['rm','workspace/%s_source.txt'%fname])

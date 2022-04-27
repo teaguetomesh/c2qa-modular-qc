@@ -7,7 +7,7 @@ pip install qiskit numpy matplotlib networkx
 ```
 
 ## Qubit Partition
-- [ ] device topology --> source graph
-- [ ] source graph --> target architecture graph (amk_grf)
+- [x] device topology --> source graph
+- [x] source graph --> target architecture graph (amk_grf)
 - [x] Circuit --> source graph
-- [ ] Static mapping
+- [x] Static mapping

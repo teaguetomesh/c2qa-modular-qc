@@ -13,13 +13,16 @@ class Ring():
         for module_idx in range(self.num_modules)]
 
         self.edges = []
+        self.global_edges = []
         # Ring
         for module_idx in range(self.num_modules):
             module = modules[module_idx]
             right_qubit = int(np.floor(np.median(module.qubits)))
-            next_module = modules[(module_idx+1)%self.num_modules]
+            next_module_idx = (module_idx+1)%self.num_modules
+            next_module = modules[next_module_idx]
             next_left_qubit = np.min(next_module.qubits)
             self.edges.append([right_qubit,next_left_qubit])
+            self.global_edges.append([module_idx,next_module_idx])
         
         self.qubits = set()
         for module in modules:
