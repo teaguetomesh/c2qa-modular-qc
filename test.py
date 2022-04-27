@@ -8,12 +8,12 @@ from compiler.distribute import distribute
 if __name__ == '__main__':
     device = Ring(num_modules=5,module_size=10)
     device_graph = edges_to_source_graph(n_vertices=device.num_modules,edges=device.global_edges)
-    write_target_graph_file(graph=device_graph, fname='device')
+    write_target_graph_file(graph=device_graph, fname='ring')
 
     circuit = generate_circ(num_qubits=len(device.qubits),depth=5,circuit_type='regular',reg_name='q',seed=None)
     stripped_circuit = circuit_stripping(circuit=circuit)
     n_vertices, edges, _, _ = circuit_to_edges(circuit=stripped_circuit)
     circuit_graph = edges_to_source_graph(n_vertices=n_vertices,edges=edges)
-    write_source_graph_file(graph=circuit_graph, fname='circuit')
+    write_source_graph_file(graph=circuit_graph, fname='regular')
 
-    distribute(source_fname='circuit',target_fname='device')
+    distribute(source_fname='regular',target_fname='ring')
