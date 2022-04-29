@@ -2,8 +2,9 @@ import subprocess
 
 from qiskit.converters import circuit_to_dag, dag_to_circuit
 
+
 def edges_to_source_graph(n_vertices, edges):
-    adjacency = {vertex_idx:{} for vertex_idx in range(n_vertices)}
+    adjacency = {vertex_idx: {} for vertex_idx in range(n_vertices)}
     distinct_edges = set()
     for edge in edges:
         u, v = edge
@@ -21,19 +22,20 @@ def edges_to_source_graph(n_vertices, edges):
     edge_weights = True
     vertex_labels = False
     source_graph = {
-        0:'0\n',
-        1:'%d %d\n'%(n_vertices,2*len(distinct_edges)),
-        2:'0 %d%d%d\n'%(vertex_labels,edge_weights,vertex_weights)
-        }
+        0: "0\n",
+        1: "%d %d\n" % (n_vertices, 2 * len(distinct_edges)),
+        2: "0 %d%d%d\n" % (vertex_labels, edge_weights, vertex_weights),
+    }
     for vertex_idx in adjacency:
         line_num = vertex_idx + 3
-        line = '%d '%len(adjacency[vertex_idx])
+        line = "%d " % len(adjacency[vertex_idx])
         for neighbor in adjacency[vertex_idx]:
             load = adjacency[vertex_idx][neighbor]
-            line += '%d %d '%(load,neighbor)
-        line += '\n'
+            line += "%d %d " % (load, neighbor)
+        line += "\n"
         source_graph[line_num] = line
     return source_graph
+
 
 def circuit_to_edges(circuit):
     dag = circuit_to_dag(circuit)
@@ -47,10 +49,16 @@ def circuit_to_edges(circuit):
         qubit_gate_counter[qubit] = 0
     for vertex in dag.topological_op_nodes():
         if len(vertex.qargs) != 2:
-            raise Exception('vertex does not have 2 qargs!')
+            raise Exception("vertex does not have 2 qargs!")
         arg0, arg1 = vertex.qargs
-        vertex_name = '%s[%d]%d %s[%d]%d' % (arg0.register.name, arg0.index, qubit_gate_counter[arg0],
-                                             arg1.register.name, arg1.index, qubit_gate_counter[arg1])
+        vertex_name = "%s[%d]%d %s[%d]%d" % (
+            arg0.register.name,
+            arg0.index,
+            qubit_gate_counter[arg0],
+            arg1.register.name,
+            arg1.index,
+            qubit_gate_counter[arg1],
+        )
         qubit_gate_counter[arg0] += 1
         qubit_gate_counter[arg1] += 1
         # print(vertex.op.label,vertex_name,curr_node_id)
@@ -61,22 +69,30 @@ def circuit_to_edges(circuit):
             curr_node_id += 1
 
     for u, v, _ in dag.edges():
-        if u.type == 'op' and v.type == 'op':
+        if u.type == "op" and v.type == "op":
             u_id = vertex_ids[id(u)]
             v_id = vertex_ids[id(v)]
             edges.append((u_id, v_id))
-            
+
     n_vertices = dag.size()
     return n_vertices, edges, node_name_ids, id_node_names
 
+
 def write_source_graph_file(graph, fname):
-    graph_file = open('workspace/%s_source.txt'%fname, 'w')
+    graph_file = open("workspace/%s_source.txt" % fname, "w")
     for line_num in range(len(graph)):
         graph_file.write(graph[line_num])
     graph_file.close()
     # subprocess.call(['/home/weit/scotch/build/bin/gtst','workspace/%s_source.txt'%fname])
 
+
 def write_target_graph_file(graph, fname):
     write_source_graph_file(graph=graph, fname=fname)
-    subprocess.call(['/home/weit/scotch/build/bin/amk_grf','workspace/%s_source.txt'%fname,'workspace/%s_target.txt'%fname])
-    subprocess.call(['rm','workspace/%s_source.txt'%fname])
+    subprocess.call(
+        [
+            "/home/weit/scotch/build/bin/amk_grf",
+            "workspace/%s_source.txt" % fname,
+            "workspace/%s_target.txt" % fname,
+        ]
+    )
+    subprocess.call(["rm", "workspace/%s_source.txt" % fname])
