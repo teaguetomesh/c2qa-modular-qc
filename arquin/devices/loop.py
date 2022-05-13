@@ -5,20 +5,20 @@ import arquin
 
 
 class Loop(arquin.device.Device):
-    """TODO: this class isn't implemented yet"""
+    """A quantum computer composed of many RingAndChordModule connected in a circle."""
 
     def __init__(self, num_modules: int, module_size: int) -> None:
-        self.num_modules = num_modules
-        self.module_size = module_size
+        modules = [
+            arquin.ring_and_chord.RingAndChordModule(
+                num_qubits=module_size, offset=module_idx * module_size
+            )
+            for module_idx in range(num_modules)
+        ]
+        super().__init__(modules)
         self.build()
 
     def build(self) -> nx.Graph:
-        modules = [
-            arquin.ring_and_chord.RingAndChordModule(
-                num_qubits=self.module_size, offset=module_idx * self.module_size
-            )
-            for module_idx in range(self.num_modules)
-        ]
+        """"""
 
         self.edges = []
         self.global_edges = []

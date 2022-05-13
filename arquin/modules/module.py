@@ -1,5 +1,4 @@
 import abc
-from typing import Iterable
 
 import networkx as nx
 
@@ -10,7 +9,8 @@ class Module:
     Provides properties ``num_qubits``, ``qubits``.
 
     Concrete sublcasses must implement the abstract ``build()``
-    function to construct the specific module topology they want.
+    function to construct the specific module topology they want. The nodes of
+    the module graph represent individual qubits.
     """
 
     def __init__(self, num_qubits: int) -> None:

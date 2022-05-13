@@ -1,5 +1,5 @@
 import abc
-from typing import Iterable
+from typing import List
 
 import networkx as nx
 
@@ -7,10 +7,16 @@ import arquin
 
 
 class Device:
-    """Class representing a single quantum computer."""
+    """Class representing a single quantum computer.
 
-    def __init__(self, modules: Iterable[arquin.module.Module]) -> None:
-        # TODO: finish implementing this class
+    Provides the properties ``modules``, ``num_modules``, and ``module_sizes``.
+
+    Concrete subclasses must implement the abstract ``build()`` function
+    to construct a NetworkX graph representing the topology of the device. The
+    nodes of the device graph represent individual modules.
+    """
+
+    def __init__(self, modules: List[arquin.module.Module]) -> None:
         self.modules = modules
         self.num_modules = len(self.modules)
         self.module_sizes = [module.num_qubits for module in self.modules]
