@@ -49,3 +49,14 @@ class Device:
         for module in self.modules:
             qubits.extend(module.qubits)
         return qubits
+
+    def get_qubit_graph(self) -> nx.Graph:
+        """Graph containing all qubits within the device"""
+        graph = nx.Graph()
+        for module in self.modules:
+            graph.add_edges_from(module.module_graph.edges())
+
+        intermodule_edges = list(self.global_edges.values())
+        graph.add_edges_from(intermodule_edges)
+
+        return graph
