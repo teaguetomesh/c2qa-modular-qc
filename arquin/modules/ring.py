@@ -1,11 +1,13 @@
+from typing import List
+
 import networkx as nx
 
 import arquin
 
 
 class RingModule(arquin.module.Module):
-    def __init__(self, num_qubits: int) -> None:
-        super().__init__(num_qubits)
+    def __init__(self, qubits: List[int]) -> None:
+        super().__init__(qubits)
         self.module_graph = self.build()
 
     def build(self) -> nx.Graph:
@@ -17,7 +19,7 @@ class RingModule(arquin.module.Module):
         edges = []
 
         # Ring
-        for qubit in self.qubits:
-            edges.append([qubit, (qubit + 1) % self.num_qubits])
+        for i in range(self.num_qubits):
+            edges.append([self.qubits[i], self.qubits[(i + 1) % self.num_qubits]])
 
         return nx.Graph().add_edges_from(edges)
