@@ -29,7 +29,9 @@ class RingAndChordModule(arquin.module.Module):
         chords = []
         start_qubit_idx = 0
         while start_qubit_idx < self.num_qubits - self._offset:
-            chords.append([self.qubits[start_qubit_idx], self.qubits[start_qubit_idx + self._offset]])
+            chords.append(
+                (self.qubits[start_qubit_idx], self.qubits[start_qubit_idx + self._offset])
+            )
             start_qubit_idx += self._offset + 1
 
         module_graph.add_edges_from(edges + chords)
