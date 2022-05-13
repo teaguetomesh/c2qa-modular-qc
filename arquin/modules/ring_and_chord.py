@@ -1,11 +1,13 @@
+from typing import List
+
 import networkx as nx
 
 import arquin
 
 
 class RingAndChordModule(arquin.module.Module):
-    def __init__(self, num_qubits: int, offset: int) -> None:
-        super().__init__(num_qubits)
+    def __init__(self, qubits: List[int], offset: int) -> None:
+        super().__init__(qubits)
         self._offset = offset
         self.module_graph = self.build()
 
@@ -16,16 +18,20 @@ class RingAndChordModule(arquin.module.Module):
         chain, with some chords existing between pairs of qubits separated
         by a distance equal to the ``offset``.
         """
+        module_graph = nx.Graph()
         edges = []
 
         # Ring
-        for qubit in self.qubits:
-            edges.append([qubit, (qubit + 1) % self.num_qubits])
+        for i in range(self.num_qubits):
+            edges.append((self.qubits[i], self.qubits[(i + 1) % self.num_qubits]))
 
         # Chords
         chords = []
-        for q1, q2 in edges:
-            chord = [q1 + self._offset, q2 + self._offset]
-            chords.append(chord)
+        start_qubit_idx = 0
+        while start_qubit_idx < self.num_qubits - self._offset:
+            chords.append([self.qubits[start_qubit_idx], self.qubits[start_qubit_idx + self._offset]])
+            start_qubit_idx += self._offset + 1
 
-        return nx.Graph().add_edges_from(edges)
+        module_graph.add_edges_from(edges + chords)
+
+        return module_graph

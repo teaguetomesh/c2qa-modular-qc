@@ -1,3 +1,5 @@
+from typing import Dict
+
 import networkx as nx
 import numpy as np
 
@@ -5,35 +7,26 @@ import arquin
 
 
 class Loop(arquin.device.Device):
-    """TODO: this class isn't implemented yet"""
+    """A quantum computer composed of many RingAndChordModule connected in a circle."""
 
-    def __init__(self, num_modules: int, module_size: int) -> None:
-        self.num_modules = num_modules
-        self.module_size = module_size
-        self.build()
-
-    def build(self) -> nx.Graph:
+    def __init__(self, num_modules: int, module_size: int, global_edges: Dict = None, module_offset: int = 2) -> None:
         modules = [
             arquin.ring_and_chord.RingAndChordModule(
-                num_qubits=self.module_size, offset=module_idx * self.module_size
+                qubits=list(np.arange(i * module_size, (i + 1) * module_size)), offset=module_offset
             )
-            for module_idx in range(self.num_modules)
+            for i in range(num_modules)
         ]
 
-        self.edges = []
-        self.global_edges = []
-        # Ring
-        for module_idx in range(self.num_modules):
-            module = modules[module_idx]
-            right_qubit = int(np.floor(np.median(module.qubits)))
-            next_module_idx = (module_idx + 1) % self.num_modules
-            next_module = modules[next_module_idx]
-            next_left_qubit = np.min(next_module.qubits)
-            self.edges.append([right_qubit, next_left_qubit])
-            self.global_edges.append([module_idx, next_module_idx])
+        if not global_edges:
+            # Default module connectivity for Loop device
+            global_edges = {}
+            for i in range(num_modules):
+                global_edges[(i, (i+1) % num_modules)] = (modules[i].qubits[modules[i].num_qubits // 2], modules[(i+1) % num_modules].qubits[0])
 
-        self.qubits = set()
-        for module in modules:
-            self.edges += module.module_graph.edges
-            self.qubits.update(module.qubits)
-        self.qubits = list(self.qubits)
+        super().__init__(modules, global_edges=global_edges)
+        self.device_graph = self.build()
+
+    def build(self) -> nx.Graph:
+        device_graph = nx.Graph()
+        device_graph.add_edges_from(list(self.global_edges.keys()))
+        return device_graph
