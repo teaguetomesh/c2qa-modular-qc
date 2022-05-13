@@ -18,17 +18,20 @@ class RingAndChordModule(arquin.module.Module):
         chain, with some chords existing between pairs of qubits separated
         by a distance equal to the ``offset``.
         """
+        module_graph = nx.Graph()
         edges = []
 
         # Ring
         for i in range(self.num_qubits):
-            edges.append([self.qubits[i], self.qubits[(i + 1) % self.num_qubits]])
+            edges.append((self.qubits[i], self.qubits[(i + 1) % self.num_qubits]))
 
         # Chords
         chords = []
         start_qubit_idx = 0
-        while start_qubit_idx < self.num_qubits - 1 - self._offset:
+        while start_qubit_idx < self.num_qubits - self._offset:
             chords.append([self.qubits[start_qubit_idx], self.qubits[start_qubit_idx + self._offset]])
             start_qubit_idx += self._offset + 1
 
-        return nx.Graph().add_edges_from(edges + chords)
+        module_graph.add_edges_from(edges + chords)
+
+        return module_graph

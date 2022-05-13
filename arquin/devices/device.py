@@ -3,8 +3,6 @@ from typing import List
 
 import networkx as nx
 
-import arquin
-
 
 class Device:
     """Class representing a single quantum computer.
@@ -16,7 +14,7 @@ class Device:
     nodes of the device graph represent individual modules.
     """
 
-    def __init__(self, modules: List[arquin.module.Module]) -> None:
+    def __init__(self, modules: List["arquin.module.Module"]) -> None:
         self.modules = modules
         self.num_modules = len(self.modules)
         self.module_sizes = [module.num_qubits for module in self.modules]
