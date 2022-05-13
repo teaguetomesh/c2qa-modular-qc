@@ -1,5 +1,5 @@
 import abc
-from typing import List
+from typing import Dict, List
 
 import networkx as nx
 
@@ -14,11 +14,38 @@ class Device:
     nodes of the device graph represent individual modules.
     """
 
-    def __init__(self, modules: List["arquin.module.Module"]) -> None:
+    def __init__(self, modules: List["arquin.module.Module"], global_edges: Dict = None) -> None:
+        """Construct a new Device object
+
+        Input
+        -----
+        modules - A list of the modules contained within this device
+        global_edges - (Optional) A dictionary indicating the module connectivity. The keys of the dictionary are tuples
+            corresponding to indices within the module list. The values are also tuples but correspond to the indices
+            of the specific qubits within each module that form the inter-module edge. If no global_edges is given, the default
+            is to connect the modules linearly with the first and last qubits of each module forming the inter-module edges.
+            For example, a device where qubit 5 of module 0 is connected to qubit 1 of module 1 would be written as:
+                global_edges = {(0,1):(5,1)}
+        """
         self.modules = modules
         self.num_modules = len(self.modules)
         self.module_sizes = [module.num_qubits for module in self.modules]
+        if global_edges:
+            self.global_edges = global_edges
+        else:
+            global_edges = {}
+            for i in range(self.num_modules - 1):
+                global_edges[(i, i+1)] = (self.modules[i].qubits[-1], self.modules[i+1].qubits[0])
 
     @abc.abstractmethod
     def build(self) -> nx.Graph:
         """Returns a NetworkX Graph representing the connections between modules"""
+
+    def get_qubits(self) -> List[int]:
+        """NOTE: writing this as a getter function for now. Can move it to a class variable
+        if we end up using it a lot.
+        """
+        qubits = []
+        for module in self.modules:
+            qubits.extend(module.qubits)
+        return qubits
