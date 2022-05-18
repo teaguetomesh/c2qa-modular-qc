@@ -1,11 +1,17 @@
 Compiler for distributed QC
 
 ```
-conda create -n rl python=3.9
-conda deactivate && conda activate rl
-pip install qiskit numpy matplotlib networkx
+conda create -n modular python=3.9
+conda deactivate && conda activate modular
+pip install qiskit numpy matplotlib networkx pylatexenc
 ```
 
 ## Qubit Partition
-- [ ] Load imbalance
-- [ ] Read distribution in greedy topological order. Build module qubits and local compile.
+- [x] Read distribution.
+- [x] Assign module qubits and build local circuits
+- [x] Local compile and combine
+- [ ] Global communication. A*?
+- [ ] Load imbalance for qubits
+
+## DEBUG
+- [ ] Make sure partition and topological op node have the same order

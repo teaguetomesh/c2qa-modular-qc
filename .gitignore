@@ -15,6 +15,7 @@ variables.*
 *.slurm
 *source*.txt
 *target*.txt
+*.txt
 
 breakout-saves
 tensorboard
