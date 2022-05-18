@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-from module.main import Module
+from arquin.modules.generic_module import Module
 
 class Device:
     def __init__(self, device_graph, module_graphs):

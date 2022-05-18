@@ -4,9 +4,9 @@ from qiskit.compiler import transpile
 
 from qiskit_helper_functions.benchmarks import generate_circ
 
-from device.main import Device
-from compiler.main import ModularCompiler
-from compiler.converters import edges_to_coupling_map
+from arquin.devices.device_2 import Device
+from arquin.compiler.main import ModularCompiler
+from arquin.compiler.converters import edges_to_coupling_map
 
 if __name__ == '__main__':
     num_modules = 3

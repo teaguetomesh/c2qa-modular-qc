@@ -3,8 +3,8 @@ from qiskit import QuantumCircuit
 from qiskit.compiler import transpile
 from qiskit.converters import circuit_to_dag, dag_to_circuit
 
-from compiler.converters import edges_to_source_graph, circuit_to_graph, write_source_graph_file, write_target_graph_file, edges_to_coupling_map
-from compiler.comms import distribute_gates, construct_local_circuits, assign_qubits, read_distribution_file
+from arquin.compiler.converters import edges_to_source_graph, circuit_to_graph, write_source_graph_file, write_target_graph_file, edges_to_coupling_map
+from arquin.compiler.comms import distribute_gates, construct_local_circuits, assign_qubits, read_distribution_file
 
 class ModularCompiler:
     def __init__(self, circuit, circuit_name, device, device_name):
@@ -47,6 +47,7 @@ class ModularCompiler:
         local_compiled_circuits = []
         for local_circuit, module in zip(local_circuits,self.device.modules):
             coupling_map = edges_to_coupling_map(module.edges)
+            # TODO: give initial mapping
             local_compiled_circuit = transpile(local_circuit,coupling_map=coupling_map,layout_method='sabre',routing_method='sabre')
             module.update_mapping(circuit=local_compiled_circuit)
             local_compiled_circuits.append(local_compiled_circuit)
