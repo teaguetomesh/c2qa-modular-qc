@@ -1,10 +1,11 @@
 import subprocess
+from typing import Dict, Iterable, List, Tuple
 
-from qiskit.converters import circuit_to_dag, dag_to_circuit
+import qiskit
 
 
-def edges_to_source_graph(n_vertices, edges):
-    adjacency = {vertex_idx: {} for vertex_idx in range(n_vertices)}
+def edges_to_source_graph(n_vertices: int, edges: List[Iterable]) -> Dict:
+    adjacency: Dict = {vertex_idx: {} for vertex_idx in range(n_vertices)}
     distinct_edges = set()
     for edge in edges:
         u, v = edge
@@ -37,8 +38,8 @@ def edges_to_source_graph(n_vertices, edges):
     return source_graph
 
 
-def circuit_to_edges(circuit):
-    dag = circuit_to_dag(circuit)
+def circuit_to_edges(circuit: qiskit.QuantumCircuit) -> Tuple:
+    dag = qiskit.converters.circuit_to_dag(circuit)
     edges = []
     node_name_ids = {}
     id_node_names = {}
@@ -78,7 +79,7 @@ def circuit_to_edges(circuit):
     return n_vertices, edges, node_name_ids, id_node_names
 
 
-def write_source_graph_file(graph, fname):
+def write_source_graph_file(graph: Dict, fname: str) -> None:
     graph_file = open("workspace/%s_source.txt" % fname, "w")
     for line_num in range(len(graph)):
         graph_file.write(graph[line_num])
@@ -86,7 +87,7 @@ def write_source_graph_file(graph, fname):
     # subprocess.call(['/home/weit/scotch/build/bin/gtst','workspace/%s_source.txt'%fname])
 
 
-def write_target_graph_file(graph, fname):
+def write_target_graph_file(graph: Dict, fname: str) -> None:
     write_source_graph_file(graph=graph, fname=fname)
     subprocess.call(
         [

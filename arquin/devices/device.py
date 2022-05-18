@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import abc
-from typing import Dict, List
+from typing import Dict, List, Sequence
 
 import networkx as nx
+
+import arquin
 
 
 class Device:
@@ -14,7 +18,7 @@ class Device:
     nodes of the device graph represent individual modules.
     """
 
-    def __init__(self, modules: List["arquin.module.Module"], global_edges: Dict = None) -> None:
+    def __init__(self, modules: Sequence[arquin.module.Module], global_edges: Dict = None) -> None:
         """Construct a new Device object
 
         Input
