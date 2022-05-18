@@ -1,93 +1,98 @@
 import subprocess
-import numpy as np
+
 from qiskit.converters import circuit_to_dag, dag_to_circuit
 
-def edges_to_source_graph(edges, vertex_weights):
-    '''
-    Edges of an undirected graph
-    '''
-    adjacency = {}
-    for edge in edges:
-        for counter in range(2):
-            vertex = edge[counter]
-            other_vertex = edge[(counter+1)%2]
-            if vertex in adjacency:
-                if other_vertex in adjacency[vertex]:
-                    adjacency[vertex][other_vertex] += 1
-                else:
-                    adjacency[vertex][other_vertex] = 1
-            else:
-                adjacency[vertex] = {other_vertex:1}
-    n_vertices = len(adjacency)
-    n_edges = len(edges)
 
-    has_vertex_weights = vertex_weights is not None
-    has_edge_weights = True
-    has_vertex_labels = False
+def edges_to_source_graph(n_vertices, edges):
+    adjacency = {vertex_idx: {} for vertex_idx in range(n_vertices)}
+    distinct_edges = set()
+    for edge in edges:
+        u, v = edge
+        distinct_edges.add(tuple(sorted(edge)))
+        if v not in adjacency[u]:
+            adjacency[u][v] = 1
+        else:
+            adjacency[u][v] += 1
+        if u not in adjacency[v]:
+            adjacency[v][u] = 1
+        else:
+            adjacency[v][u] += 1
+
+    vertex_weights = False
+    edge_weights = True
+    vertex_labels = False
     source_graph = {
-        0:'0\n',
-        1:'%d %d\n'%(n_vertices,2*n_edges),
-        2:'0 %d%d%d\n'%(has_vertex_labels,has_edge_weights,has_vertex_weights)
-        }
+        0: "0\n",
+        1: "%d %d\n" % (n_vertices, 2 * len(distinct_edges)),
+        2: "0 %d%d%d\n" % (vertex_labels, edge_weights, vertex_weights),
+    }
     for vertex_idx in adjacency:
         line_num = vertex_idx + 3
-        line = ''
-        if has_vertex_weights:
-            line += '%d '%vertex_weights[vertex_idx]
-        line += '%d '%len(adjacency[vertex_idx])
+        line = "%d " % len(adjacency[vertex_idx])
         for neighbor in adjacency[vertex_idx]:
             load = adjacency[vertex_idx][neighbor]
-            line += '%d %d '%(load,neighbor)
-        line += '\n'
+            line += "%d %d " % (load, neighbor)
+        line += "\n"
         source_graph[line_num] = line
     return source_graph
 
-def circuit_to_graph(circuit):
+
+def circuit_to_edges(circuit):
     dag = circuit_to_dag(circuit)
-    vertex_weights = []
-    id_to_idx = {} # Gate id to gate idx
-    idx_to_gate = [] # Gates in topological order
-    dirty_qubits = []
-    for vertex in dag.topological_op_nodes():
-        id_to_idx[id(vertex)] = len(idx_to_gate)
-        idx_to_gate.append(vertex)
-        vertex_weight = 0
-        for qarg in vertex.qargs:
-            if qarg not in dirty_qubits:
-                dirty_qubits.append(qarg)
-                vertex_weight += 1
-        vertex_weights.append(vertex_weight)
-
     edges = []
-    for u, v, _ in dag.edges():
-        if u.type == 'op' and v.type == 'op':
-            u_idx = id_to_idx[id(u)]
-            v_idx = id_to_idx[id(v)]
-            edges.append((u_idx, v_idx))
-            
-    return vertex_weights, edges
+    node_name_ids = {}
+    id_node_names = {}
+    vertex_ids = {}
+    curr_node_id = 0
+    qubit_gate_counter = {}
+    for qubit in dag.qubits:
+        qubit_gate_counter[qubit] = 0
+    for vertex in dag.topological_op_nodes():
+        if len(vertex.qargs) != 2:
+            raise Exception("vertex does not have 2 qargs!")
+        arg0, arg1 = vertex.qargs
+        vertex_name = "%s[%d]%d %s[%d]%d" % (
+            arg0.register.name,
+            arg0.index,
+            qubit_gate_counter[arg0],
+            arg1.register.name,
+            arg1.index,
+            qubit_gate_counter[arg1],
+        )
+        qubit_gate_counter[arg0] += 1
+        qubit_gate_counter[arg1] += 1
+        # print(vertex.op.label,vertex_name,curr_node_id)
+        if vertex_name not in node_name_ids and id(vertex) not in vertex_ids:
+            node_name_ids[vertex_name] = curr_node_id
+            id_node_names[curr_node_id] = vertex_name
+            vertex_ids[id(vertex)] = curr_node_id
+            curr_node_id += 1
 
-def write_source_graph_file(graph, save_dir, fname):
-    graph_file = open('%s/%s_source.txt'%(save_dir,fname), 'w')
+    for u, v, _ in dag.edges():
+        if u.type == "op" and v.type == "op":
+            u_id = vertex_ids[id(u)]
+            v_id = vertex_ids[id(v)]
+            edges.append((u_id, v_id))
+
+    n_vertices = dag.size()
+    return n_vertices, edges, node_name_ids, id_node_names
+
+
+def write_source_graph_file(graph, fname):
+    graph_file = open("workspace/%s_source.txt" % fname, "w")
     for line_num in range(len(graph)):
         graph_file.write(graph[line_num])
     graph_file.close()
-    # subprocess.call(['/home/weit/scotch/build/bin/gtst','%s/%s_source.txt'%(save_dir,fname)])
+    # subprocess.call(['/home/weit/scotch/build/bin/gtst','workspace/%s_source.txt'%fname])
 
-def write_target_graph_file(graph, save_dir, fname):
-    write_source_graph_file(graph=graph, save_dir=save_dir, fname=fname)
-    subprocess.call([
-        '/home/weit/scotch/build/bin/amk_grf',
-        '%s/%s_source.txt'%(save_dir,fname),
-        '%s/%s_target.txt'%(save_dir,fname)])
-    subprocess.call(['rm','%s/%s_source.txt'%(save_dir,fname)])
 
-def edges_to_coupling_map(edges):
-    coupling_map = set()
-    offset = min([min(edge[0],edge[1]) for edge in edges])
-    for edge in edges:
-        offset_edge = (edge[0]-offset,edge[1]-offset)
-        coupling_map.add(offset_edge)
-        coupling_map.add(offset_edge[::-1])
-    coupling_map = [list(edge) for edge in coupling_map]
-    return coupling_map
+def write_target_graph_file(graph, fname):
+    write_source_graph_file(graph=graph, fname=fname)
+    subprocess.call(
+        [
+            "/home/weit/scotch/build/bin/amk_grf",
+            "workspace/%s_source.txt" % fname,
+            "workspace/%s_target.txt" % fname,
+        ]
+    )
+    subprocess.call(["rm", "workspace/%s_source.txt" % fname])

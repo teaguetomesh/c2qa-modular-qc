@@ -1,10 +1,20 @@
-Compiler for distributed QC
+# Architectures for quantum interconnects (ARQUIN)
+A compiler for distributed QC.
+
+## Installation
+To install the `arquin` package and its requirements, enter the following
+commands into your terminal:
 
 ```
-conda create -n modular python=3.9
-conda deactivate && conda activate modular
-pip install qiskit numpy matplotlib networkx pylatexenc
+python3 -m venv your_virtual_env
+source your_virtual_env/bin/activate
+pip install -r requirements.txt
+pip install -e .
 ```
+
+## How to run checks
+When developing `arquin` it is useful to run the formatter and type checker before making a pull request.
+To do this you can run all of the checks with `./check/all`.
 
 ## Qubit Partition
 - [x] Read distribution.

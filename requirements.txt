@@ -1,0 +1,4 @@
+networkx>=2.6.3
+qiskit>=0.34.1
+matplotlib
+pylatexenc
