@@ -1,26 +1,41 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+from qiskit.compiler import transpile
+
 from qiskit_helper_functions.benchmarks import generate_circ
-from qiskit_helper_functions.non_ibmq_functions import circuit_stripping
 
-from device.ring import Ring
-from compiler.converters import (
-    edges_to_source_graph,
-    circuit_to_edges,
-    write_source_graph_file,
-    write_target_graph_file,
-)
-from compiler.distribute import distribute
+from device.main import Device
+from compiler.main import ModularCompiler
+from compiler.converters import edges_to_coupling_map
 
-if __name__ == "__main__":
-    device = Ring(num_modules=5, module_size=10)
-    device_graph = edges_to_source_graph(n_vertices=device.num_modules, edges=device.global_edges)
-    write_target_graph_file(graph=device_graph, fname="ring")
+if __name__ == '__main__':
+    num_modules = 3
+    module_size = 4
+    device_graph = nx.cycle_graph(num_modules)
+    module_graph = nx.cycle_graph(module_size)    
+    device = Device(
+        device_graph=device_graph,
+        module_graphs=[module_graph for _ in range(num_modules)])
 
-    circuit = generate_circ(
-        num_qubits=len(device.qubits), depth=5, circuit_type="regular", reg_name="q", seed=None
-    )
-    stripped_circuit = circuit_stripping(circuit=circuit)
-    n_vertices, edges, _, _ = circuit_to_edges(circuit=stripped_circuit)
-    circuit_graph = edges_to_source_graph(n_vertices=n_vertices, edges=edges)
-    write_source_graph_file(graph=circuit_graph, fname="regular")
+    circuit = generate_circ(num_qubits=device.size,depth=1,circuit_type='regular',reg_name='q',seed=None)
 
-    distribute(source_fname="regular", target_fname="ring")
+    coupling_map = edges_to_coupling_map(device.inter_edges+device.intra_edges)
+    transpiled_circuit = transpile(circuit,coupling_map=coupling_map,layout_method='sabre',routing_method='sabre')
+    print('Qiskit depth %d --> %d'%(circuit.depth(), transpiled_circuit.depth()))
+
+    compiler = ModularCompiler(circuit=circuit,circuit_name='regular',device=device,device_name='ring')
+    compiler.run()
+
+    # nx.draw(device_graph)
+    # plt.savefig('workspace/device.pdf')
+    # plt.close()
+
+    # nx.draw(module_graph)
+    # plt.savefig('workspace/module.pdf')
+    # plt.close()
+
+    # detailed_device = nx.Graph()
+    # detailed_device.add_edges_from(device.edges)
+    # nx.draw(detailed_device,with_labels=True)
+    # plt.savefig('workspace/detailed_device.pdf')
+    # plt.close()

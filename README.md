@@ -17,5 +17,11 @@ When developing `arquin` it is useful to run the formatter and type checker befo
 To do this you can run all of the checks with `./check/all`.
 
 ## Qubit Partition
-- [ ] Load imbalance
-- [ ] Read distribution in greedy topological order. Build module qubits and local compile.
+- [x] Read distribution.
+- [x] Assign module qubits and build local circuits
+- [x] Local compile and combine
+- [ ] Global communication. A*?
+- [ ] Load imbalance for qubits
+
+## DEBUG
+- [ ] Make sure partition and topological op node have the same order
