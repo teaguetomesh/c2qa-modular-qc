@@ -1,15 +1,21 @@
 import copy
 from qiskit.converters import circuit_to_dag
+from qiskit import QuantumCircuit, QuantumRegister
 
 class Module:
-    def __init__(self, graph, offset):
+    def __init__(self, graph, index):
         '''
         Networkx graph for the module connectivity
         '''
-        self.qubits = [node+offset for node in graph.nodes]
-        self.edges = [[edge[0]+offset, edge[1]+offset] for edge in graph.edges]
-        self.offset = offset
-        self.mapping = [] # Index is the module qubit, value is the circuit/device qubit
+        module_reg = QuantumRegister(graph.size(),'module_%d'%index)
+        module_circuit = QuantumCircuit(module_reg)
+        self.dag = circuit_to_dag(module_circuit)
+        self.edges = []
+        for edge in graph.edges:
+            edge = [list(graph.nodes).index(node) for node in edge]
+            edge = [self.dag.qubits[node] for node in edge]
+            self.edges.append(edge)
+        self.mapping = [] # mapping[physical module qubit] = virtual circuit/device qubit
     
     def update_mapping(self, circuit):
         '''

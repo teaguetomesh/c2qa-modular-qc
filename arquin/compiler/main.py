@@ -39,7 +39,7 @@ class ModularCompiler:
             local_compiled_circuits = self.local_compile(local_circuits=local_circuits)
             self.combine(local_compiled_circuits=local_compiled_circuits)
             print('output circuit depth %d'%self.output_dag.depth())
-            self.visualize(curr_circuit=curr_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
+            # self.visualize(curr_circuit=curr_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
             curr_circuit = next_circuit
             recursion_counter += 1
     
