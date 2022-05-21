@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from qiskit.compiler import transpile
+from qiskit.transpiler import CouplingMap
 
 from qiskit_helper_functions.benchmarks import generate_circ
 
@@ -16,16 +17,15 @@ if __name__ == '__main__':
     device = Device(
         device_graph=device_graph,
         module_graphs=[module_graph for _ in range(num_modules)])
-    print(device.size)
 
-    # circuit = generate_circ(num_qubits=device.size,depth=1,circuit_type='regular',reg_name='q',seed=None)
+    circuit = generate_circ(num_qubits=device.size,depth=1,circuit_type='regular',reg_name='q',connected_only=False,seed=None)
 
-    # coupling_map = edges_to_coupling_map(device.inter_edges+device.intra_edges)
-    # transpiled_circuit = transpile(circuit,coupling_map=coupling_map,layout_method='sabre',routing_method='sabre')
-    # print('Qiskit depth %d --> %d'%(circuit.depth(), transpiled_circuit.depth()))
+    coupling_map = edges_to_coupling_map(device.global_edges+device.local_edges)
+    transpiled_circuit = transpile(circuit,coupling_map=coupling_map,layout_method='sabre',routing_method='sabre')
+    print('Qiskit depth %d --> %d'%(circuit.depth(), transpiled_circuit.depth()))
 
-    # compiler = ModularCompiler(circuit=circuit,circuit_name='regular',device=device,device_name='ring')
-    # compiler.run()
+    compiler = ModularCompiler(circuit=circuit,circuit_name='regular',device=device,device_name='ring')
+    compiler.run()
 
     # nx.draw(device_graph)
     # plt.savefig('workspace/device.pdf')

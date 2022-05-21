@@ -83,11 +83,11 @@ def write_target_graph_file(graph, save_dir, fname):
     subprocess.call(['rm','%s/%s_source.txt'%(save_dir,fname)])
 
 def edges_to_coupling_map(edges):
-    coupling_map = set()
-    offset = min([min(edge[0],edge[1]) for edge in edges])
+    coupling_map = []
+    # offset = min([min(edge[0],edge[1]) for edge in edges])
     for edge in edges:
-        offset_edge = (edge[0]-offset,edge[1]-offset)
-        coupling_map.add(offset_edge)
-        coupling_map.add(offset_edge[::-1])
-    coupling_map = [list(edge) for edge in coupling_map]
+        assert len(edge)==2 and edge[0]!=edge[1]
+        # offset_edge = (edge[0]-offset,edge[1]-offset)
+        coupling_map.append(edge)
+        coupling_map.append(edge[::-1])
     return coupling_map

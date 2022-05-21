@@ -20,7 +20,7 @@ class ModularCompiler:
         os.makedirs(self.work_dir)
     
     def run(self):
-        device_graph = edges_to_source_graph(edges=self.device.abstract_inter_edges,vertex_weights=None)
+        device_graph = edges_to_source_graph(edges=self.device.abstract_global_edges,vertex_weights=None)
         write_target_graph_file(graph=device_graph, save_dir=self.work_dir, fname=self.device_name)
 
         curr_circuit = copy.deepcopy(self.circuit)
@@ -28,7 +28,7 @@ class ModularCompiler:
         while curr_circuit.size()>0:
             print('*'*20,'Recursion %d'%recursion_counter,'*'*20)
             print('curr_circuit size %d'%curr_circuit.size())
-            vertex_weights, edges= circuit_to_graph(circuit=curr_circuit)
+            vertex_weights, edges = circuit_to_graph(circuit=curr_circuit)
             circuit_graph = edges_to_source_graph(edges=edges, vertex_weights=vertex_weights)
             write_source_graph_file(graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name)
             distribute_gates(source_fname=self.circuit_name,target_fname=self.device_name)
