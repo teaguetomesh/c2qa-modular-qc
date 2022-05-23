@@ -7,19 +7,19 @@ import qiskit
 class Module:
     """Class representing a single module within a distributed quantum computer.
 
-    Provides properties ``graph``, ``qubits``, ``offset``, ``size``, ``dag``, and ``mapping``.
+    Provides properties ``graph``, ``qubits``, ``module_index``, ``size``, ``dag``, and ``mapping``.
 
     The nodes of the module graph represent individual qubits.
     """
 
-    def __init__(self, graph: nx.Graph, offset: int) -> None:
+    def __init__(self, graph: nx.Graph, module_index: int) -> None:
         """
         The module graph represents the coupling map between contiguously labelled module qubits starting at
-        index i=0. The offset is used to map between module and device qubits.
+        index i=0. The module_index is used to map between module and device qubits.
         """
         self.graph = graph
         self.qubits = list(sorted(graph.nodes))
-        self.offset = offset
+        self.module_index = module_index
         self.size = self.graph.size()
         module_circuit = qiskit.QuantumCircuit(self.graph.size())
         self.dag = qiskit.converters.circuit_to_dag(module_circuit)
