@@ -1,10 +1,12 @@
 import subprocess
 from typing import Dict, Iterable, List, Tuple
 
+import networkx as nx
 import qiskit
 
 
-def edges_to_source_graph(n_vertices: int, edges: List[Iterable]) -> Dict:
+def edges_to_source_graph(graph: nx.Graph) -> Dict:
+    """Convert given graph to SCOTCH format"""
     adjacency: Dict = {vertex_idx: {} for vertex_idx in range(n_vertices)}
     distinct_edges = set()
     for edge in edges:

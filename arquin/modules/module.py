@@ -17,7 +17,7 @@ class Module:
     def __init__(self, qubits: List[int]) -> None:
         self.qubits = qubits
         self.num_qubits = len(self.qubits)
-        self.module_graph = None
+        self.module_graph = nx.Graph()
 
     @abc.abstractmethod
     def build(self) -> nx.Graph:
