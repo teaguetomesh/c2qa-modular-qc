@@ -3,16 +3,16 @@ from qiskit.converters import circuit_to_dag
 from qiskit import QuantumCircuit
 
 class Module:
-    def __init__(self, graph, offset):
+    def __init__(self, graph, module_idx):
         '''
         Networkx graph for the module connectivity
         '''
-        module_circuit = QuantumCircuit(graph.size())
-        self.dag = circuit_to_dag(module_circuit)
         self.qubits = graph.nodes
         self.edges = graph.edges
-        self.offset = offset
+        self.module_idx = module_idx
         self.size = graph.size()
+        circuit = QuantumCircuit(self.size)
+        self.dag = circuit_to_dag(circuit)
         self.mapping = [] # mapping[physical module qubit] = virtual circuit/device qubit
     
     def update_mapping(self, circuit):

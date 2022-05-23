@@ -20,27 +20,39 @@ class ModularCompiler:
         os.makedirs(self.work_dir)
     
     def run(self):
+        # Step 0: convert the device topology graph to SCOTCH format
         device_graph = edges_to_source_graph(edges=self.device.abstract_global_edges,vertex_weights=None)
         write_target_graph_file(graph=device_graph, save_dir=self.work_dir, fname=self.device_name)
 
-        curr_circuit = copy.deepcopy(self.circuit)
+        remaining_circuit = copy.deepcopy(self.circuit)
         recursion_counter = 0
-        while curr_circuit.size()>0:
+        while remaining_circuit.size()>0:
             print('*'*20,'Recursion %d'%recursion_counter,'*'*20)
-            print('curr_circuit size %d'%curr_circuit.size())
-            vertex_weights, edges = circuit_to_graph(circuit=curr_circuit)
+            print('remaining_circuit size %d'%remaining_circuit.size())
+            # Step 1: convert the remaining circuit to SCOTCH format
+            vertex_weights, edges = circuit_to_graph(circuit=remaining_circuit)
             circuit_graph = edges_to_source_graph(edges=edges, vertex_weights=vertex_weights)
             write_source_graph_file(graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name)
+            
+            # Step 2: distribute the gates and assign the qubits to modules
             distribute_gates(source_fname=self.circuit_name,target_fname=self.device_name)
             distribution = read_distribution_file(distribution_fname='%s_%s'%(self.circuit_name,self.device_name))
-            module_qubit_assignments = assign_qubits(distribution=distribution, circuit=curr_circuit, device=self.device)
+            module_qubit_assignments = assign_qubits(distribution=distribution, circuit=remaining_circuit, device=self.device)
+            print(module_qubit_assignments)
+            exit(1)
+
+            # Step 3: Global communication (skipped in the first recursion)
             self.global_comm(module_qubit_assignments)
-            next_circuit, local_circuits = construct_local_circuits(circuit=curr_circuit, device=self.device, distribution=distribution)
+
+            # Step 4: greedy construction of the local circuits
+            next_circuit, local_circuits = construct_local_circuits(circuit=remaining_circuit, device=self.device, distribution=distribution)
+
+            # Step 5: local compile and combine
             local_compiled_circuits = self.local_compile(local_circuits=local_circuits)
             self.combine(local_compiled_circuits=local_compiled_circuits)
             print('output circuit depth %d'%self.output_dag.depth())
-            # self.visualize(curr_circuit=curr_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
-            curr_circuit = next_circuit
+            # self.visualize(remaining_circuit=remaining_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
+            remaining_circuit = next_circuit
             recursion_counter += 1
     
     def local_compile(self, local_circuits):
@@ -76,8 +88,8 @@ class ModularCompiler:
             print('Abstract inter module edges:',self.device.abstract_inter_edges)
             exit(1)
 
-    def visualize(self, curr_circuit, local_compiled_circuits, next_circuit):
-        curr_circuit.draw(output='text',filename='./workspace/curr_circuit.txt')
+    def visualize(self, remaining_circuit, local_compiled_circuits, next_circuit):
+        remaining_circuit.draw(output='text',filename='./workspace/remaining_circuit.txt')
         module_counter = 0
         for module, local_compiled_circuit in zip(self.device.modules,local_compiled_circuits):
             local_compiled_circuit.draw(output='text',filename='./workspace/module_%d.txt'%module_counter)

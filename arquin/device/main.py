@@ -1,5 +1,7 @@
 import networkx as nx
 import numpy as np
+from qiskit.converters import circuit_to_dag
+from qiskit import QuantumCircuit
 
 from arquin.module.main import Module
 
@@ -10,32 +12,42 @@ class Device:
         module_graphs: list of graphs of each module
         '''
         assert len(module_graphs) == device_graph.size()
-        self.modules = self._build_modules(module_graphs=module_graphs)
-        self.global_edges, self.local_edges = self._connect_modules(device_graph=device_graph)
-        self.abstract_global_edges = device_graph.edges
-        self.size = sum([module.size for module in self.modules])
+        self.coarse_global_edges = device_graph.edges
+        self.size = sum([module_graph.size() for module_graph in module_graphs])
+        circuit = QuantumCircuit(self.size)
+        self.dag = circuit_to_dag(circuit)
+        self.modules, self.device_to_module_physical = self._build_modules(module_graphs=module_graphs)
+        self.fine_edges = self._connect_modules()
     
     def _build_modules(self, module_graphs):
         modules = []
-        offset = 0
-        for module_graph in module_graphs:
-            module = Module(graph=module_graph, offset=offset)
-            offset += module.size
+        device_to_module_physical = []
+        for module_idx, module_graph in enumerate(module_graphs):
+            module = Module(graph=module_graph, module_idx=module_idx)
+            for qubit in module.qubits:
+                device_to_module_physical.append((module_idx,qubit))
             modules.append(module)
-        return modules
+        return modules, device_to_module_physical
     
-    def _connect_modules(self, device_graph):
+    def _connect_modules(self):
         global_edges = []
-        for global_edge in device_graph.edges:
-            module_idx_l, module_idx_r = global_edge
-            module_l_qubit = np.random.choice(self.modules[module_idx_l].qubits) + self.modules[module_idx_l].offset
-            module_r_qubit = np.random.choice(self.modules[module_idx_r].qubits) + self.modules[module_idx_r].offset
-            global_edges.append([module_l_qubit, module_r_qubit])
+        for coarse_global_edge in self.coarse_global_edges:
+            module_idx_l, module_idx_r = coarse_global_edge
+            
+            module_qubit_l = np.random.choice(self.modules[module_idx_l].qubits)
+            device_qubit_l = self.device_to_module_physical.index((module_idx_l,module_qubit_l))
+
+            module_qubit_r = np.random.choice(self.modules[module_idx_r].qubits)
+            device_qubit_r = self.device_to_module_physical.index((module_idx_r,module_qubit_r))
+
+            global_edges.append([device_qubit_l, device_qubit_r])
+
         local_edges = []
-        for module in self.modules:
-            module_edges_with_offset = []
+        for module_idx, module in enumerate(self.modules):
             for edge in module.edges:
-                edge_with_offset = [edge[0] + module.offset, edge[1] + module.offset]
-                module_edges_with_offset.append(edge_with_offset)
-            local_edges += module_edges_with_offset
-        return global_edges, local_edges
+                module_qubit_0, module_qubit_1 = edge
+                device_qubit_0 = self.device_to_module_physical.index((module_idx, module_qubit_0))
+                device_qubit_1 = self.device_to_module_physical.index((module_idx, module_qubit_1))
+                local_edges.append([device_qubit_0,device_qubit_1])
+        fine_edges = global_edges + local_edges
+        return fine_edges
