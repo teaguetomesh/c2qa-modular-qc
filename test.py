@@ -1,7 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from qiskit.compiler import transpile
-from qiskit.transpiler import CouplingMap
+import qiskit
 
 from qiskit_helper_functions.benchmarks import generate_circ
 
@@ -11,7 +10,7 @@ if __name__ == "__main__":
     num_modules = 3
     module_size = 4
     # Last qubit of module i is connected to first qubit of module i+1
-    global_edges = [[[i, module_size-1], [(i+1) % num_modules], 0] for i in range(num_modules)]
+    global_edges = [[i, module_size-1], [(i+1) % num_modules, 0] for i in range(num_modules)]
     module_graph = nx.cycle_graph(module_size)
     device = arquin.Device(
         global_edges=global_edges, module_graphs=[module_graph for _ in range(num_modules)]
@@ -22,7 +21,7 @@ if __name__ == "__main__":
     )
 
     coupling_map = arquin.converters.edges_to_coupling_map(device.physical_qubit_graph.edges)
-    transpiled_circuit = transpile(
+    transpiled_circuit = qiskit.compiler.transpile(
         circuit, coupling_map=coupling_map, layout_method="sabre", routing_method="sabre"
     )
     print(f"Qiskit depth {circuit.depth()} --> {transpiled_circuit.depth()}")
