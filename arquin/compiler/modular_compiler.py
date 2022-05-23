@@ -32,7 +32,7 @@ class ModularCompiler:
     def run(self) -> None:
         # Step 0: convert the device topology graph to SCOTCH format
         device_graph = arquin.converters.edges_to_source_graph(
-            edges=self.device.abstract_inter_edges, vertex_weights=None
+            graph=self.device.graph
         )
         arquin.converters.write_target_graph_file(
             graph=device_graph, save_dir=self.work_dir, fname=self.device_name
@@ -44,8 +44,8 @@ class ModularCompiler:
             print("*" * 20, "Recursion %d" % recursion_counter, "*" * 20)
             print("remaining_circuit size %d" % remaining_circuit.size())
             # Step 1: convert the remaining circuit to SCOTCH format
-            vertex_weights, edges = circuit_to_graph(circuit=remaining_circuit)
-            circuit_graph = edges_to_source_graph(edges=edges, vertex_weights=vertex_weights)
+            vertex_weights, edges = arquin.converters.circuit_to_graph(circuit=remaining_circuit)
+            circuit_graph = arquin.converters.edges_to_source_graph(edges=edges, vertex_weights=vertex_weights)
             write_source_graph_file(
                 graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name
             )
