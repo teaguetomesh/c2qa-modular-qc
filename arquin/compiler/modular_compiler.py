@@ -31,9 +31,7 @@ class ModularCompiler:
 
     def run(self) -> None:
         # Step 0: convert the device topology graph to SCOTCH format
-        device_graph = arquin.converters.edges_to_source_graph(
-            graph=self.device.graph
-        )
+        device_graph = arquin.converters.edges_to_source_graph(graph=self.device.graph)
         arquin.converters.write_target_graph_file(
             graph=device_graph, save_dir=self.work_dir, fname=self.device_name
         )
@@ -45,7 +43,9 @@ class ModularCompiler:
             print("remaining_circuit size %d" % remaining_circuit.size())
             # Step 1: convert the remaining circuit to SCOTCH format
             vertex_weights, edges = arquin.converters.circuit_to_graph(circuit=remaining_circuit)
-            circuit_graph = arquin.converters.edges_to_source_graph(edges=edges, vertex_weights=vertex_weights)
+            circuit_graph = arquin.converters.edges_to_source_graph(
+                edges=edges, vertex_weights=vertex_weights
+            )
             write_source_graph_file(
                 graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name
             )

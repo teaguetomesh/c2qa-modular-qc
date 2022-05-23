@@ -36,7 +36,9 @@ class Device:
 
         assert len(module_graphs) == self.graph.size()
 
-        self.modules, self.d2m_p2p_mapping, self.m2d_p2p_mapping = self._build_modules(module_graphs)
+        self.modules, self.d2m_p2p_mapping, self.m2d_p2p_mapping = self._build_modules(
+            module_graphs
+        )
 
         # Nodes are device qubits, edges are (qubit_i, qubit_j)
         self.physical_qubit_graph = self._construct_qubit_graph()
@@ -59,7 +61,7 @@ class Device:
             module = arquin.Module(graph=module_graph, module_index=module_index)
             modules.append(module)
             for qubit in module.qubits:
-                d2m_p2p_mapping[device_qubit_counter] = (module_index,qubit)
+                d2m_p2p_mapping[device_qubit_counter] = (module_index, qubit)
                 m2d_p2p_mapping[(module_index, qubit)] = device_qubit_counter
                 device_qubit_counter += 1
         return modules, d2m_p2p_mapping, m2d_p2p_mapping
@@ -71,7 +73,8 @@ class Device:
         # Add all local edges
         for idx, module in enumerate(self.modules):
             local_edges = [
-                [self.m2d_p2p_mapping[(idx, v1)], self.m2d_p2p_mapping[(idx, v2)]] for v1, v2 in module.graph.edges
+                [self.m2d_p2p_mapping[(idx, v1)], self.m2d_p2p_mapping[(idx, v2)]]
+                for v1, v2 in module.graph.edges
             ]
             graph.add_edges_from(local_edges)
 
