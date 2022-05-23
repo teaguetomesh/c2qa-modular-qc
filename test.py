@@ -5,9 +5,7 @@ from qiskit.transpiler import CouplingMap
 
 from qiskit_helper_functions.benchmarks import generate_circ
 
-from arquin.device.main import Device
-from arquin.compiler.main import ModularCompiler
-from arquin.compiler.converters import edges_to_coupling_map
+import arquin
 
 if __name__ == "__main__":
     num_modules = 3
