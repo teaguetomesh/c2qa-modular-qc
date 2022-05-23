@@ -1,12 +1,14 @@
 import subprocess
-import numpy as np
-from qiskit.converters import circuit_to_dag, dag_to_circuit
+from typing import Dict, Iterable, List, Tuple
 
-def edges_to_source_graph(edges, vertex_weights):
-    '''
-    Edges of an undirected graph
-    '''
-    adjacency = {}
+import networkx as nx
+import qiskit
+
+
+def edges_to_source_graph(graph: nx.Graph) -> Dict:
+    """Convert given graph to SCOTCH format"""
+    adjacency: Dict = {vertex_idx: {} for vertex_idx in range(n_vertices)}
+    distinct_edges = set()
     for edge in edges:
         for counter in range(2):
             vertex = edge[counter]
@@ -64,7 +66,7 @@ def circuit_to_graph(circuit):
             u_idx = id_to_idx[id(u)]
             v_idx = id_to_idx[id(v)]
             edges.append((u_idx, v_idx))
-            
+
     return vertex_weights, edges
 
 def write_source_graph_file(graph, save_dir, fname):

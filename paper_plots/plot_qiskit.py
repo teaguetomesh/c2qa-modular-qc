@@ -109,14 +109,15 @@ def annotate_heatmap(
     texts = []
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
-            annotation = valfmt(data[i, j], None) if data[i,j]>0 else '-'
+            annotation = valfmt(data[i, j], None) if data[i, j] > 0 else "-"
             kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
             text = im.axes.text(j, i, annotation, **kw)
             texts.append(text)
     return texts
 
-if __name__ == '__main__':
-    data = pickle.load(open('experiments/profile_qiskit.pckl','rb'))
+
+if __name__ == "__main__":
+    data = pickle.load(open("experiments/profile_qiskit.pckl", "rb"))
 
     num_modules = list(data.keys())
     module_sizes = set()
@@ -148,5 +149,5 @@ if __name__ == '__main__':
     )
     texts = annotate_heatmap(im, valfmt="{x:.1f}")
     fig.tight_layout()
-    plt.savefig('paper_plots/qiskit_profile.pdf',dpi=400)
+    plt.savefig("paper_plots/qiskit_profile.pdf", dpi=400)
     plt.close()
