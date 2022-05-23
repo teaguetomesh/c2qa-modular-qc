@@ -40,18 +40,24 @@ class ModularCompiler:
 
         remaining_circuit = copy.deepcopy(self.circuit)
         recursion_counter = 0
-        while remaining_circuit.size()>0:
-            print('*'*20,'Recursion %d'%recursion_counter,'*'*20)
-            print('remaining_circuit size %d'%remaining_circuit.size())
+        while remaining_circuit.size() > 0:
+            print("*" * 20, "Recursion %d" % recursion_counter, "*" * 20)
+            print("remaining_circuit size %d" % remaining_circuit.size())
             # Step 1: convert the remaining circuit to SCOTCH format
             vertex_weights, edges = circuit_to_graph(circuit=remaining_circuit)
             circuit_graph = edges_to_source_graph(edges=edges, vertex_weights=vertex_weights)
-            write_source_graph_file(graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name)
-            
+            write_source_graph_file(
+                graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name
+            )
+
             # Step 2: distribute the gates and assign the qubits to modules
-            distribute_gates(source_fname=self.circuit_name,target_fname=self.device_name)
-            distribution = read_distribution_file(distribution_fname='%s_%s'%(self.circuit_name,self.device_name))
-            module_qubit_assignments = assign_qubits(distribution=distribution, circuit=remaining_circuit, device=self.device)
+            distribute_gates(source_fname=self.circuit_name, target_fname=self.device_name)
+            distribution = read_distribution_file(
+                distribution_fname="%s_%s" % (self.circuit_name, self.device_name)
+            )
+            module_qubit_assignments = assign_qubits(
+                distribution=distribution, circuit=remaining_circuit, device=self.device
+            )
             print(module_qubit_assignments)
             exit(1)
 
@@ -59,12 +65,14 @@ class ModularCompiler:
             self.global_comm(module_qubit_assignments)
 
             # Step 4: greedy construction of the local circuits
-            next_circuit, local_circuits = construct_local_circuits(circuit=remaining_circuit, device=self.device, distribution=distribution)
+            next_circuit, local_circuits = construct_local_circuits(
+                circuit=remaining_circuit, device=self.device, distribution=distribution
+            )
 
             # Step 5: local compile and combine
             local_compiled_circuits = self.local_compile(local_circuits=local_circuits)
             self.combine(local_compiled_circuits=local_compiled_circuits)
-            print('output circuit depth %d'%self.output_dag.depth())
+            print("output circuit depth %d" % self.output_dag.depth())
             # self.visualize(remaining_circuit=remaining_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
             remaining_circuit = next_circuit
             recursion_counter += 1
