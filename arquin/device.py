@@ -29,7 +29,7 @@ class Device:
             with respect to each module.
         module_graphs: list of graphs of each module
         """
-        self.global_edges = global_edges # qubits are in module format
+        self.global_edges = global_edges  # qubits are in module format
 
         # Nodes are modules, edges are (module_i, module_j)
         self.graph = self._build_device_graph()
@@ -66,11 +66,16 @@ class Device:
 
         # Add all local edges
         for module in self.modules:
-            local_edges = [[v1 + module.offset, v2 + module.offset] for v1, v2 in module.graph.edges]
+            local_edges = [
+                [v1 + module.offset, v2 + module.offset] for v1, v2 in module.graph.edges
+            ]
             graph.add_edges_from(local_edges)
 
         # Add all global edges
-        intermodule_edges = [[self.module_to_device_qubit(v1), self.module_to_device_qubit(v2)] for v1, v2 in self.global_edges]
+        intermodule_edges = [
+            [self.module_to_device_qubit(v1), self.module_to_device_qubit(v2)]
+            for v1, v2 in self.global_edges
+        ]
         graph.add_edges_from(intermodule_edges)
 
         return graph
