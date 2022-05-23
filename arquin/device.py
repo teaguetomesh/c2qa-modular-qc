@@ -36,7 +36,7 @@ class Device:
 
         assert len(module_graphs) == self.graph.size()
 
-        self.modules = self._build_modules(module_graphs=module_graphs)
+        self.modules, self.d2m_p2p_mapping, self.m2d_p2p_mapping = self._build_modules(module_graphs)
 
         # Nodes are device qubits, edges are (qubit_i, qubit_j)
         self.physical_qubit_graph = self._construct_qubit_graph()
@@ -50,52 +50,36 @@ class Device:
         device_graph.add_edges_from(intermodule_edges)
         return device_graph
 
-    def _build_modules(self, module_graphs):
+    def _build_modules(self, module_graphs: List[nx.Graph]) -> Tuple:
         """Construct arquin.Module objects for each of the provided module graphs."""
         modules = []
-        offset = 0
-        for module_graph in module_graphs:
-            module = arquin.Module(graph=module_graph, offset=offset)
-            offset += module.size
+        d2m_p2p_mapping, m2d_p2p_mapping = {}, {}
+        device_qubit_counter = 0
+        for module_index, module_graph in enumerate(module_graphs):
+            module = arquin.Module(graph=module_graph, module_index=module_index)
             modules.append(module)
-        return modules
+            for qubit in module.qubits:
+                d2m_p2p_mapping[device_qubit_counter] = (module_index,qubit)
+                m2d_p2p_mapping[(module_index, qubit)] = device_qubit_counter
+                device_qubit_counter += 1
+        return modules, d2m_p2p_mapping, m2d_p2p_mapping
 
     def _construct_qubit_graph(self) -> nx.Graph:
         """Graph containing all physical qubits within the device"""
         graph = nx.Graph()
 
         # Add all local edges
-        for module in self.modules:
+        for idx, module in enumerate(self.modules):
             local_edges = [
-                [v1 + module.offset, v2 + module.offset] for v1, v2 in module.graph.edges
+                [self.m2d_p2p_mapping[(idx, v1)], self.m2d_p2p_mapping[(idx, v2)]] for v1, v2 in module.graph.edges
             ]
             graph.add_edges_from(local_edges)
 
         # Add all global edges
         intermodule_edges = [
-            [self.module_to_device_qubit(v1), self.module_to_device_qubit(v2)]
+            [self.m2d_p2p_mapping[tuple(v1)], self.m2d_p2p_mapping[tuple(v2)]]
             for v1, v2 in self.global_edges
         ]
         graph.add_edges_from(intermodule_edges)
 
         return graph
-
-    def module_to_device_qubit(self, module_qubit: List[int, int]) -> int:
-        """Convert a module format qubit to a device format qubit"""
-        return module_qubit[1] + self.modules[module_qubit[0]].offset
-
-    def device_to_module_qubit(self, device_qubit: int) -> List[int, int]:
-        """Convert a device format qubit to a module format qubit"""
-
-        temp_qubit_index = device_qubit
-        module_index, qubit_index = -1, -1
-        for i, module in enumerate(self.modules):
-            temp_qubit_index -= module.size
-            if temp_qubit_index < 0:
-                module_index = i
-                qubit_index = device_qubit - module.offset
-                break
-
-        assert module_index >= 0 and qubit_index >= 0
-
-        return [module_index, qubit_index]
