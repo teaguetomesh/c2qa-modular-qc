@@ -1,17 +1,15 @@
-from .compiler import converters
-from .compiler import distribute
-from .devices import device
-from .devices import loop
-from .modules import module
-from .modules import ring
-from .modules import ring_and_chord
+from arquin.compiler import comms
+from arquin.compiler import converters
+from arquin.compiler import distribute
+from arquin.compiler.modular_compiler import ModularCompiler
+from arquin.device import Device
+from arquin.module import Module
 
 __all__ = [
+    "comms",
     "converters",
     "distribute",
-    "device",
-    "loop",
-    "module",
-    "ring",
-    "ring_and_chord",
+    "ModularCompiler",
+    "Device",
+    "Module",
 ]
