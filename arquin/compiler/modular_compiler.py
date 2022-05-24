@@ -53,7 +53,9 @@ class ModularCompiler:
             )
 
             # Step 2: distribute the gates and assign the qubits to modules
-            arquin.comms.distribute_gates(source_fname=self.circuit_name, target_fname=self.device_name)
+            arquin.comms.distribute_gates(
+                source_fname=self.circuit_name, target_fname=self.device_name
+            )
             distribution = arquin.comms.read_distribution_file(
                 distribution_fname="%s_%s" % (self.circuit_name, self.device_name)
             )
@@ -77,13 +79,13 @@ class ModularCompiler:
             # self.visualize(remaining_circuit=remaining_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
             remaining_circuit = next_circuit
             recursion_counter += 1
-    
+
     def global_comm(self, module_qubit_assignments: Dict) -> None:
         if self.output_dag.size() == 0:
             for module_idx in module_qubit_assignments:
                 for qubit in module_qubit_assignments[module_idx]:
                     self.device.modules[module_idx].add_device_virtual_qubit(qubit)
-                print("Module %d: "%module_idx,self.device.modules[module_idx].m2d_p2v_mapping)
+                print("Module %d: " % module_idx, self.device.modules[module_idx].m2d_p2v_mapping)
         else:
             for module_idx in module_qubit_assignments:
                 module = self.device.modules[module_idx]
