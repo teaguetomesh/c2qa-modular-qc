@@ -15,6 +15,8 @@ class Device:
 
     DEFINE THE DIFFERENT GRAPHS AND QUBIT REPRESENTATIONS HERE
     The nodes of the device graph represent individual modules.
+    d2m_p2p_mapping: device to module, physical to physical mapping
+    m2d_p2p_mapping: module to device, physical to physical mapping
     """
 
     def __init__(self, global_edges: List[List[List[int]]], module_graphs: List[nx.Graph]) -> None:

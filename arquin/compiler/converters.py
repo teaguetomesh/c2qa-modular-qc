@@ -5,10 +5,9 @@ import networkx as nx
 import qiskit
 
 
-def edges_to_source_graph(graph: nx.Graph) -> Dict:
+def edges_to_source_graph(edges, vertex_weights: Dict) -> Dict:
     """Convert given graph to SCOTCH format"""
-    adjacency: Dict = {vertex_idx: {} for vertex_idx in range(n_vertices)}
-    distinct_edges = set()
+    adjacency = {}
     for edge in edges:
         for counter in range(2):
             vertex = edge[counter]
@@ -46,7 +45,7 @@ def edges_to_source_graph(graph: nx.Graph) -> Dict:
 
 
 def circuit_to_graph(circuit):
-    dag = circuit_to_dag(circuit)
+    dag = qiskit.converters.circuit_to_dag(circuit)
     vertex_weights = []
     id_to_idx = {}  # Gate id to gate idx
     idx_to_gate = []  # Gates in topological order
@@ -76,7 +75,7 @@ def write_source_graph_file(graph, save_dir, fname):
     for line_num in range(len(graph)):
         graph_file.write(graph[line_num])
     graph_file.close()
-    # subprocess.call(['/home/weit/scotch/build/bin/gtst','%s/%s_source.txt'%(save_dir,fname)])
+    # subprocess.call(["/home/weit/scotch/build/bin/gtst", "%s/%s_source.txt" % (save_dir, fname)])
 
 
 def write_target_graph_file(graph, save_dir, fname):
@@ -93,10 +92,8 @@ def write_target_graph_file(graph, save_dir, fname):
 
 def edges_to_coupling_map(edges):
     coupling_map = []
-    # offset = min([min(edge[0],edge[1]) for edge in edges])
     for edge in edges:
         assert len(edge) == 2 and edge[0] != edge[1]
-        # offset_edge = (edge[0]-offset,edge[1]-offset)
-        coupling_map.append(edge)
-        coupling_map.append(edge[::-1])
+        coupling_map.append(list(edge))
+        coupling_map.append(list(edge[::-1]))
     return coupling_map

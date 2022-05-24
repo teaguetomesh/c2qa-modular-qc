@@ -15,9 +15,16 @@ if __name__ == "__main__":
     device = arquin.Device(
         global_edges=global_edges, module_graphs=[module_graph for _ in range(num_modules)]
     )
+    # for var in vars(device):
+    #     print(var,vars(device)[var])
 
     circuit = generate_circ(
-        num_qubits=device.size, depth=1, circuit_type="regular", reg_name="q", seed=None
+        num_qubits=device.size,
+        depth=1,
+        circuit_type="regular",
+        reg_name="q",
+        connected_only=False,
+        seed=None,
     )
 
     coupling_map = arquin.converters.edges_to_coupling_map(device.physical_qubit_graph.edges)
