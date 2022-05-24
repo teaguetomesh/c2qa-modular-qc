@@ -10,6 +10,7 @@ class Module:
     Provides properties ``graph``, ``qubits``, ``module_index``, ``size``, ``dag``, and ``mapping``.
 
     The nodes of the module graph represent individual qubits.
+    m2d_p2v_mapping: module to device, physical to virtual mapping
     """
 
     def __init__(self, graph: nx.Graph, module_index: int) -> None:
@@ -23,7 +24,11 @@ class Module:
         self.size = self.graph.size()
         module_circuit = qiskit.QuantumCircuit(self.graph.size())
         self.dag = qiskit.converters.circuit_to_dag(module_circuit)
-        self.mapping = []  # mapping[physical module qubit] = virtual circuit/device qubit
+        self.m2d_p2v_mapping = {}
+    
+    def add_device_virtual_qubit(self, qubit: qiskit.circuit.Qubit) -> None:
+        self.m2d_p2v_mapping[len(self.m2d_p2v_mapping)] = qubit
+        assert len(self.m2d_p2v_mapping)<=self.size
 
     def update_mapping(self, circuit: qiskit.QuantumCircuit) -> None:
         """

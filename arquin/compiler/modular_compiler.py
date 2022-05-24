@@ -31,7 +31,9 @@ class ModularCompiler:
 
     def run(self) -> None:
         # Step 0: convert the device topology graph to SCOTCH format
-        device_graph = arquin.converters.edges_to_source_graph(graph=self.device.graph)
+        device_graph = arquin.converters.edges_to_source_graph(
+            edges=self.device.graph.edges, vertex_weights=None
+        )
         arquin.converters.write_target_graph_file(
             graph=device_graph, save_dir=self.work_dir, fname=self.device_name
         )
@@ -46,26 +48,25 @@ class ModularCompiler:
             circuit_graph = arquin.converters.edges_to_source_graph(
                 edges=edges, vertex_weights=vertex_weights
             )
-            write_source_graph_file(
+            arquin.converters.write_source_graph_file(
                 graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name
             )
 
             # Step 2: distribute the gates and assign the qubits to modules
-            distribute_gates(source_fname=self.circuit_name, target_fname=self.device_name)
-            distribution = read_distribution_file(
+            arquin.comms.distribute_gates(source_fname=self.circuit_name, target_fname=self.device_name)
+            distribution = arquin.comms.read_distribution_file(
                 distribution_fname="%s_%s" % (self.circuit_name, self.device_name)
             )
-            module_qubit_assignments = assign_qubits(
+            module_qubit_assignments = arquin.comms.assign_qubits(
                 distribution=distribution, circuit=remaining_circuit, device=self.device
             )
-            print(module_qubit_assignments)
-            exit(1)
 
             # Step 3: Global communication (skipped in the first recursion)
             self.global_comm(module_qubit_assignments)
+            exit(1)
 
             # Step 4: greedy construction of the local circuits
-            next_circuit, local_circuits = construct_local_circuits(
+            next_circuit, local_circuits = arquin.comms.construct_local_circuits(
                 circuit=remaining_circuit, device=self.device, distribution=distribution
             )
 
@@ -76,6 +77,24 @@ class ModularCompiler:
             # self.visualize(remaining_circuit=remaining_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
             remaining_circuit = next_circuit
             recursion_counter += 1
+    
+    def global_comm(self, module_qubit_assignments: Dict) -> None:
+        if self.output_dag.size() == 0:
+            for module_idx in module_qubit_assignments:
+                for qubit in module_qubit_assignments[module_idx]:
+                    self.device.modules[module_idx].add_device_virtual_qubit(qubit)
+                print("Module %d: "%module_idx,self.device.modules[module_idx].m2d_p2v_mapping)
+        else:
+            for module_idx in module_qubit_assignments:
+                module = self.device.modules[module_idx]
+                curr_mapping = [self.circuit.qubits.index(qubit) for qubit in module.mapping]
+                desired_mapping = [
+                    self.circuit.qubits.index(qubit)
+                    for qubit in module_qubit_assignments[module_idx]
+                ]
+                print("Module {:d} {} --> {}".format(module_idx, curr_mapping, desired_mapping))
+            print("Abstract inter module edges:", self.device.abstract_inter_edges)
+            exit(1)
 
     def local_compile(
         self, local_circuits: List[qiskit.QuantumCircuit]
@@ -100,22 +119,6 @@ class ModularCompiler:
                 local_compiled_dag,
                 qubits=self.output_dag.qubits[module.offset : module.offset + len(module.qubits)],
             )
-
-    def global_comm(self, module_qubit_assignments: Dict) -> None:
-        if self.output_dag.size() == 0:
-            for module_idx in module_qubit_assignments:
-                self.device.modules[module_idx].mapping = module_qubit_assignments[module_idx]
-        else:
-            for module_idx in module_qubit_assignments:
-                module = self.device.modules[module_idx]
-                curr_mapping = [self.circuit.qubits.index(qubit) for qubit in module.mapping]
-                desired_mapping = [
-                    self.circuit.qubits.index(qubit)
-                    for qubit in module_qubit_assignments[module_idx]
-                ]
-                print("Module {:d} {} --> {}".format(module_idx, curr_mapping, desired_mapping))
-            print("Abstract inter module edges:", self.device.abstract_inter_edges)
-            exit(1)
 
     def visualize(
         self,
