@@ -25,9 +25,12 @@ class Module:
         module_circuit = qiskit.QuantumCircuit(self.graph.size())
         self.dag = qiskit.converters.circuit_to_dag(module_circuit)
         self.m2d_p2v_mapping = {}
+        self.d2m_v2p_mapping = {}
 
     def add_device_virtual_qubit(self, qubit: qiskit.circuit.Qubit) -> None:
-        self.m2d_p2v_mapping[len(self.m2d_p2v_mapping)] = qubit
+        module_virtual_qubit = len(self.m2d_p2v_mapping)
+        self.m2d_p2v_mapping[module_virtual_qubit] = qubit
+        self.d2m_v2p_mapping[qubit] = module_virtual_qubit
         assert len(self.m2d_p2v_mapping) <= self.size
 
     def update_mapping(self, circuit: qiskit.QuantumCircuit) -> None:

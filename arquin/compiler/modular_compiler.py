@@ -65,12 +65,12 @@ class ModularCompiler:
 
             # Step 3: Global communication (skipped in the first recursion)
             self.global_comm(module_qubit_assignments)
-            exit(1)
 
             # Step 4: greedy construction of the local circuits
             next_circuit, local_circuits = arquin.comms.construct_local_circuits(
                 circuit=remaining_circuit, device=self.device, distribution=distribution
             )
+            exit(1)
 
             # Step 5: local compile and combine
             local_compiled_circuits = self.local_compile(local_circuits=local_circuits)
