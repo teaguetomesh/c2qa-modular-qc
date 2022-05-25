@@ -32,7 +32,7 @@ class ModularCompiler:
     def run(self) -> None:
         # Step 0: convert the device topology graph to SCOTCH format
         device_graph = arquin.converters.edges_to_source_graph(
-            edges=self.device.graph.edges, vertex_weights=None
+            edges=self.device.coarse_graph.edges, vertex_weights=None
         )
         arquin.converters.write_target_graph_file(
             graph=device_graph, save_dir=self.work_dir, fname=self.device_name
@@ -70,7 +70,6 @@ class ModularCompiler:
             next_circuit = arquin.comms.construct_local_circuits(
                 circuit=remaining_circuit, device=self.device, distribution=distribution
             )
-            exit(1)
 
             # Step 5: local compile and combine
             local_compiled_circuits = self.local_compile()
@@ -85,7 +84,7 @@ class ModularCompiler:
             for module_idx in module_qubit_assignments:
                 for qubit in module_qubit_assignments[module_idx]:
                     self.device.modules[module_idx].add_device_virtual_qubit(qubit)
-                print("Module %d: " % module_idx, self.device.modules[module_idx].mp_2_dv_mapping)
+                # print("Module %d: " % module_idx, self.device.modules[module_idx].mp_2_dv_mapping)
         else:
             for module_idx in module_qubit_assignments:
                 module = self.device.modules[module_idx]
@@ -99,18 +98,10 @@ class ModularCompiler:
             exit(1)
 
     def local_compile(self) -> List[qiskit.QuantumCircuit]:
-        local_compiled_circuits = []
-        for local_circuit, module in zip(local_circuits, self.device.modules):
-            coupling_map = arquin.converters.edges_to_coupling_map(module.graph.edges)
-            local_compiled_circuit = qiskit.compiler.transpile(
-                local_circuit,
-                coupling_map=coupling_map,
-                layout_method="sabre",
-                routing_method="sabre",
-            )
-            module.update_mapping(circuit=local_compiled_circuit)
-            local_compiled_circuits.append(local_compiled_circuit)
-        return local_compiled_circuits
+        for module in self.device.modules:
+            compiled_circuit = module.compile()
+            module.update_mapping(compiled_circuit)
+        exit(1)
 
     def combine(self, local_compiled_circuits: List[qiskit.QuantumCircuit]) -> None:
         for local_compiled_circuit, module in zip(local_compiled_circuits, self.device.modules):

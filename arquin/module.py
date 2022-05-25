@@ -3,6 +3,8 @@ import copy
 import networkx as nx
 import qiskit
 
+import arquin
+
 
 class Module:
     """Class representing a single module within a distributed quantum computer.
@@ -26,14 +28,17 @@ class Module:
         self.dag = qiskit.converters.circuit_to_dag(module_circuit)
         self.mp_2_dv_mapping = {}
         self.dv_2_mp_mapping = {}
-        self.mp_2_mv_mapping = {module_physical: self.dag.qubits[module_physical] for module_physical in range(self.dag.width())}
+        self.mp_2_mv_mapping = {
+            module_physical: self.dag.qubits[module_physical]
+            for module_physical in range(self.dag.width())
+        }
 
     def add_device_virtual_qubit(self, qubit: qiskit.circuit.Qubit) -> None:
         module_virtual_qubit = len(self.mp_2_dv_mapping)
         self.mp_2_dv_mapping[module_virtual_qubit] = qubit
         self.dv_2_mp_mapping[qubit] = module_virtual_qubit
         assert len(self.mp_2_dv_mapping) <= self.size
-    
+
     def add_device_virtual_gate(self, gate, inactive_qubits) -> bool:
         module_qargs = []
         for device_virtual in gate.qargs:
@@ -41,23 +46,36 @@ class Module:
                 module_physical = self.dv_2_mp_mapping[device_virtual]
                 module_virtual = self.mp_2_mv_mapping[module_physical]
                 module_qargs.append(module_virtual)
-        if len(module_qargs)==len(gate.qargs):
-            print("Gate {:s} qargs {} --> Module {:d} qargs {}".format(gate.op.name,gate.qargs,self.module_index,module_qargs))
+        if len(module_qargs) == len(gate.qargs):
+            # print("Gate {:s} qargs {} --> Module {:d} qargs {}".format(gate.op.name,gate.qargs,self.module_index,module_qargs))
             self.dag.apply_operation_back(op=gate.op, qargs=module_qargs)
             return True
         else:
             return False
 
+    def compile(self) -> qiskit.QuantumCircuit:
+        coupling_map = arquin.converters.edges_to_coupling_map(self.graph.edges)
+        circuit = qiskit.converters.dag_to_circuit(self.dag)
+        compiled_circuit = qiskit.compiler.transpile(
+            circuit,
+            coupling_map=coupling_map,
+            layout_method="sabre",
+            routing_method="sabre",
+        )
+        self.dag = qiskit.converters.circuit_to_dag(compiled_circuit)
+        return compiled_circuit
+
     def update_mapping(self, circuit: qiskit.QuantumCircuit) -> None:
         """
         Update the mapping based on the SWAPs in the circuit
         """
-        print(circuit)
         print("mp_2_dv_mapping before compile :", self.mp_2_dv_mapping)
+        print("mp_2_mv_mapping before compile :", self.mp_2_mv_mapping)
         new_mp_2_dv_mapping = copy.deepcopy(self.mp_2_dv_mapping)
         for module_physical_qubit in circuit._layout.get_physical_bits():
             module_virtual_qubit = circuit._layout.get_physical_bits()[module_physical_qubit]
-            print(module_physical_qubit, module_virtual_qubit)
+            device_virtual_qubit = self.mp_2_dv_mapping[module_physical_qubit]
+            print(module_physical_qubit, module_virtual_qubit, device_virtual_qubit)
 
             # new_initial_mapping[module_physical_qubit] = self.mapping[
             #     circuit.qubits.index(module_virtual_qubit)

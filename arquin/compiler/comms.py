@@ -29,7 +29,7 @@ def construct_local_circuits(
     2. Assign as many gates as possible for each module
     """
     remaining_dag = qiskit.converters.circuit_to_dag(circuit)
-    
+
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
     for gate, module_idx in zip(topological_op_nodes, distribution):

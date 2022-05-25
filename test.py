@@ -27,7 +27,7 @@ if __name__ == "__main__":
         seed=None,
     )
 
-    coupling_map = arquin.converters.edges_to_coupling_map(device.physical_qubit_graph.edges)
+    coupling_map = arquin.converters.edges_to_coupling_map(device.fine_graph.edges)
     transpiled_circuit = qiskit.compiler.transpile(
         circuit, coupling_map=coupling_map, layout_method="sabre", routing_method="sabre"
     )
