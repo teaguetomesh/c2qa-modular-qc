@@ -4,6 +4,7 @@ from typing import Dict, List
 
 import networkx as nx
 import numpy as np
+import qiskit
 
 import arquin
 
@@ -15,8 +16,10 @@ class Device:
 
     DEFINE THE DIFFERENT GRAPHS AND QUBIT REPRESENTATIONS HERE
     The nodes of the device graph represent individual modules.
-    dp_2_mp_mapping: device to module, physical to physical mapping
-    mp_2_dp_mapping: module to device, physical to physical mapping
+    dp_2_mp_mapping: device physical to module virtual mapping
+    mp_2_dp_mapping: module physical to device physical mapping
+    dp_2_dv_mapping: device physical to device virtual mapping
+    dv_2_dp_mapping: device virtual to device physical mapping
     """
 
     def __init__(self, global_edges: List[List[List[int]]], module_graphs: List[nx.Graph]) -> None:
@@ -44,6 +47,10 @@ class Device:
         self.fine_graph = self._build_fine_device_graph(global_edges)
 
         self.size = sum([module.size for module in self.modules])
+
+        circuit = qiskit.QuantumCircuit(self.size)
+        self.dag = qiskit.converters.circuit_to_dag(circuit)
+        self.dp_2_dv_mapping, self.dv_2_dp_mapping = {}, {}
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
         """Construct the device graph using the global edges."""

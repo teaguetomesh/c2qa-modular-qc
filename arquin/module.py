@@ -24,20 +24,9 @@ class Module:
         self.qubits = list(sorted(graph.nodes))
         self.module_index = module_index
         self.size = self.graph.size()
-        module_circuit = qiskit.QuantumCircuit(self.graph.size())
-        self.dag = qiskit.converters.circuit_to_dag(module_circuit)
-        self.mp_2_dv_mapping = {}
-        self.dv_2_mp_mapping = {}
-        self.mp_2_mv_mapping = {
-            module_physical: self.dag.qubits[module_physical]
-            for module_physical in range(self.dag.width())
-        }
-
-    def add_device_virtual_qubit(self, qubit: qiskit.circuit.Qubit) -> None:
-        module_virtual_qubit = len(self.mp_2_dv_mapping)
-        self.mp_2_dv_mapping[module_virtual_qubit] = qubit
-        self.dv_2_mp_mapping[qubit] = module_virtual_qubit
-        assert len(self.mp_2_dv_mapping) <= self.size
+        circuit = qiskit.QuantumCircuit(self.graph.size())
+        self.dag = qiskit.converters.circuit_to_dag(circuit)
+        self.mp_2_mv_mapping = {}
 
     def add_device_virtual_gate(self, gate, inactive_qubits) -> bool:
         module_qargs = []
