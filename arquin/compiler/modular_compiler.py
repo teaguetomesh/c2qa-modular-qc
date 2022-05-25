@@ -67,13 +67,13 @@ class ModularCompiler:
             self.global_comm(module_qubit_assignments)
 
             # Step 4: greedy construction of the local circuits
-            next_circuit, local_circuits = arquin.comms.construct_local_circuits(
+            next_circuit = arquin.comms.construct_local_circuits(
                 circuit=remaining_circuit, device=self.device, distribution=distribution
             )
             exit(1)
 
             # Step 5: local compile and combine
-            local_compiled_circuits = self.local_compile(local_circuits=local_circuits)
+            local_compiled_circuits = self.local_compile()
             self.combine(local_compiled_circuits=local_compiled_circuits)
             print("output circuit depth %d" % self.output_dag.depth())
             # self.visualize(remaining_circuit=remaining_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
@@ -85,7 +85,7 @@ class ModularCompiler:
             for module_idx in module_qubit_assignments:
                 for qubit in module_qubit_assignments[module_idx]:
                     self.device.modules[module_idx].add_device_virtual_qubit(qubit)
-                print("Module %d: " % module_idx, self.device.modules[module_idx].m2d_p2v_mapping)
+                print("Module %d: " % module_idx, self.device.modules[module_idx].mp_2_dv_mapping)
         else:
             for module_idx in module_qubit_assignments:
                 module = self.device.modules[module_idx]
@@ -98,12 +98,10 @@ class ModularCompiler:
             print("Abstract inter module edges:", self.device.abstract_inter_edges)
             exit(1)
 
-    def local_compile(
-        self, local_circuits: List[qiskit.QuantumCircuit]
-    ) -> List[qiskit.QuantumCircuit]:
+    def local_compile(self) -> List[qiskit.QuantumCircuit]:
         local_compiled_circuits = []
         for local_circuit, module in zip(local_circuits, self.device.modules):
-            coupling_map = arquin.converters.edges_to_coupling_map(module.edges)
+            coupling_map = arquin.converters.edges_to_coupling_map(module.graph.edges)
             local_compiled_circuit = qiskit.compiler.transpile(
                 local_circuit,
                 coupling_map=coupling_map,

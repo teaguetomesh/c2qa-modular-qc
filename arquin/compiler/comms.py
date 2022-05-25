@@ -30,37 +30,23 @@ def construct_local_circuits(
     """
     remaining_dag = qiskit.converters.circuit_to_dag(circuit)
     
-    local_dags = [
-        qiskit.converters.circuit_to_dag(qiskit.QuantumCircuit(len(module.qubits)))
-        for module in device.modules
-    ]
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
     for gate, module_idx in zip(topological_op_nodes, distribution):
         module = device.modules[module_idx]
-        local_dag = local_dags[module_idx]
-        module_qargs = []
-        for qarg in gate.qargs:
-            if qarg in module.d2m_v2p_mapping and qarg not in inactive_qubits:
-                module_qubit = module.d2m_v2p_mapping[qarg]
-                module_qarg = local_dag.qubits[module_qubit]
-                module_qargs.append(module_qarg)
-        if len(module_qargs) == len(gate.qargs):
-            # print("Gate {:s} qargs {} --> Module {:d} {}".format(gate.op.name,gate.qargs,module_idx,module_qargs))
-            local_dag.apply_operation_back(op=gate.op, qargs=module_qargs)
+        success = module.add_device_virtual_gate(gate, inactive_qubits)
+        if success:
             remaining_dag.remove_op_node(gate)
         else:
             """
-            A qubit becomes inactive whenever any gate involving the qubit fails to get assigned
+            A qubit becomes inactive whenever any gate involving the qubit fails to add to its module
             """
             inactive_qubits.update(gate.qargs)
-            # print('inactive_qubits =',inactive_qubits)
         if len(inactive_qubits) == remaining_dag.width():
             break
 
     remaining_circuit = qiskit.converters.dag_to_circuit(remaining_dag)
-    local_circuits = [qiskit.converters.dag_to_circuit(dag) for dag in local_dags]
-    return remaining_circuit, local_circuits
+    return remaining_circuit
 
 
 def assign_qubits(
