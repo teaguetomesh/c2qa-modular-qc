@@ -28,19 +28,10 @@ class Module:
         self.dag = qiskit.converters.circuit_to_dag(circuit)
         self.mp_2_mv_mapping = {}
 
-    def add_device_virtual_gate(self, gate, inactive_qubits) -> bool:
-        module_qargs = []
-        for device_virtual in gate.qargs:
-            if device_virtual in self.dv_2_mp_mapping and device_virtual not in inactive_qubits:
-                module_physical = self.dv_2_mp_mapping[device_virtual]
-                module_virtual = self.mp_2_mv_mapping[module_physical]
-                module_qargs.append(module_virtual)
-        if len(module_qargs) == len(gate.qargs):
-            # print("Gate {:s} qargs {} --> Module {:d} qargs {}".format(gate.op.name,gate.qargs,self.module_index,module_qargs))
-            self.dag.apply_operation_back(op=gate.op, qargs=module_qargs)
-            return True
-        else:
-            return False
+    def add_gate(self, op, module_physical_qargs) -> None:
+        module_virtual_qargs = [self.mp_2_mv_mapping[module_physical_qubit[1]] for module_physical_qubit in module_physical_qargs]
+        print(op.name,module_virtual_qargs)
+        self.dag.apply_operation_back(op=op, qargs=module_virtual_qargs)
 
     def compile(self) -> qiskit.QuantumCircuit:
         coupling_map = arquin.converters.edges_to_coupling_map(self.graph.edges)

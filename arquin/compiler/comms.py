@@ -33,7 +33,17 @@ def construct_local_circuits(
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
     for gate, module_idx in zip(topological_op_nodes, distribution):
-        module = device.modules[module_idx]
+        device_physical_qargs = [device.dv_2_dp_mapping[device_virtual_qubit] for device_virtual_qubit in gate.qargs]
+        module_physical_qargs = [device.dp_2_mp_mapping[device_physical_qubit] for device_physical_qubit in device_physical_qargs]
+        in_module = all([module_physical_qarg[0]==module_idx for module_physical_qarg in module_physical_qargs])
+        no_dependence = all([device_virtual_qubit not in inactive_qubits for device_virtual_qubit in gate.qargs])
+        if in_module and no_dependence:
+            module = device.modules[module_idx]
+            module.add_gate(gate.op, module_physical_qargs)
+        print(gate.op.name,gate.qargs,module_idx)
+        print(device_physical_qargs)
+        print(module_physical_qargs)
+        exit(1)
         success = module.add_device_virtual_gate(gate, inactive_qubits)
         if success:
             remaining_dag.remove_op_node(gate)

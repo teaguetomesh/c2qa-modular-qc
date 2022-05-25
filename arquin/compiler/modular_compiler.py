@@ -82,12 +82,15 @@ class ModularCompiler:
     def global_comm(self, module_qubit_assignments: Dict) -> None:
         if self.output_dag.size() == 0:
             for module_idx in module_qubit_assignments:
+                module = self.device.modules[module_idx]
                 for module_physical_qubit, device_virtual_qubit in enumerate(module_qubit_assignments[module_idx]):
                     device_physical_qubit = self.device.mp_2_dp_mapping[(module_idx,module_physical_qubit)]
+                    module_virtual_qubit = module.dag.qubits[len(module.mp_2_mv_mapping)]
                     self.device.dp_2_dv_mapping[device_physical_qubit] = device_virtual_qubit
                     self.device.dv_2_dp_mapping[device_virtual_qubit] = device_physical_qubit
-                    print("{} --> Module {:d} physical {:d} --> Device physical {:d}".format(
-                        device_virtual_qubit, module_idx, module_physical_qubit, device_physical_qubit
+                    module.mp_2_mv_mapping[module_physical_qubit] = module.dag.qubits[len(module.mp_2_mv_mapping)]
+                    print("{} --> Device physical {:d} --> Module {:d} physical {:d} --> {}".format(
+                        device_virtual_qubit, device_physical_qubit, module_idx, module_physical_qubit, module_virtual_qubit
                     ))
         else:
             for module_idx in module_qubit_assignments:

@@ -59,7 +59,7 @@ class Device:
         device_graph.add_edges_from(intermodule_edges)
         return device_graph
 
-    def _build_modules(self, module_graphs: List[nx.Graph]) -> Tuple:
+    def _build_modules(self, module_graphs: List[nx.Graph]) -> tuple:
         """Construct arquin.Module objects for each of the provided module graphs."""
         modules = []
         dp_2_mp_mapping, mp_2_dp_mapping = {}, {}
