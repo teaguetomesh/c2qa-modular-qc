@@ -32,29 +32,8 @@ if __name__ == "__main__":
         circuit, coupling_map=coupling_map, layout_method="sabre", routing_method="sabre"
     )
     print(f"Qiskit depth {circuit.depth()} --> {transpiled_circuit.depth()}")
-    # print(transpiled_circuit)
-    # print(transpiled_circuit.qubits)
-    # dag = qiskit.converters.circuit_to_dag(transpiled_circuit)
-    # for gate in dag.topological_op_nodes():
-    #     physical_qargs = [transpiled_circuit.qubits.index(qubit) for qubit in gate.qargs]
-    #     if len(gate.qargs)==2:
-    #         print(gate.op.name,gate.qargs,physical_qargs)
 
     compiler = arquin.ModularCompiler(
         circuit=circuit, circuit_name="regular", device=device, device_name="ring"
     )
     compiler.run()
-
-    # nx.draw(device_graph)
-    # plt.savefig('workspace/device.pdf')
-    # plt.close()
-
-    # nx.draw(module_graph)
-    # plt.savefig('workspace/module.pdf')
-    # plt.close()
-
-    # detailed_device = nx.Graph()
-    # detailed_device.add_edges_from(device.edges)
-    # nx.draw(detailed_device,with_labels=True)
-    # plt.savefig('workspace/detailed_device.pdf')
-    # plt.close()

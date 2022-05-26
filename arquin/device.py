@@ -43,15 +43,11 @@ class Device:
             module_graphs
         )
         self.mp_2_dp_mapping = arquin.converters.reverse_dict(self.dp_2_mp_mapping)
-        self.dv_2_mv_mapping = {}
 
         # Nodes are device qubits, edges are (qubit_i, qubit_j)
         self.fine_graph = self._build_fine_device_graph(global_edges)
 
         self.size = sum([module.size for module in self.modules])
-
-        circuit = qiskit.QuantumCircuit(self.size)
-        self.dag = qiskit.converters.circuit_to_dag(circuit)
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
         """Construct the device graph using the global edges."""

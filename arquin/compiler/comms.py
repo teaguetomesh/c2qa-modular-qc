@@ -9,17 +9,6 @@ import qiskit
 import arquin
 
 
-def distribute_gates(source_fname: str, target_fname: str) -> None:
-    subprocess.call(
-        [
-            "/home/weit/scotch/build/bin/gmap",
-            "workspace/%s_source.txt" % source_fname,
-            "workspace/%s_target.txt" % target_fname,
-            "workspace/%s_%s_distribution.txt" % (source_fname, target_fname),
-        ]
-    )
-
-
 def construct_module_virtual_circuits(
     circuit: qiskit.QuantumCircuit, device: arquin.device.Device, distribution: np.ndarray
 ) -> Tuple[qiskit.QuantumCircuit, List]:
@@ -51,46 +40,3 @@ def construct_module_virtual_circuits(
 
     remaining_circuit = qiskit.converters.dag_to_circuit(remaining_dag)
     return remaining_circuit
-
-
-def assign_device_virtual_qubits(
-    distribution: np.ndarray, circuit: qiskit.QuantumCircuit, device: arquin.device.Device
-) -> Dict:
-    dag = qiskit.converters.circuit_to_dag(circuit)
-    topological_op_nodes = list(dag.topological_op_nodes())
-    for device_virtual_qubit in dag.qubits:
-        gates_on_qubit = list(dag.nodes_on_wire(device_virtual_qubit, only_ops=True))
-        if len(gates_on_qubit) > 0:
-            first_gate = gates_on_qubit[0]
-            gate_idx = topological_op_nodes.index(first_gate)
-            module_idx = distribution[gate_idx]
-            module = device.modules[module_idx]
-            module_virtual_qubit = module.virtual_circuit.qubits[len(module.mv_2_dv_mapping)]
-            module.mv_2_dv_mapping[module_virtual_qubit] = device_virtual_qubit
-            device.dv_2_mv_mapping[device_virtual_qubit] = (module_idx, module_virtual_qubit)
-    check_qubit_assignment_valid(circuit, device)
-    for device_virtual_qubit in device.dv_2_mv_mapping:
-        module_index, module_virtual_qubit = device.dv_2_mv_mapping[device_virtual_qubit]
-        print("{} --> Module {:d} {}".format(device_virtual_qubit,module_index,module_virtual_qubit))
-
-
-def check_qubit_assignment_valid(circuit, device):
-    all_qubits = []
-    for module in device.modules:
-        assert len(module.mv_2_dv_mapping) <= module.size
-        all_qubits += list(module.mv_2_dv_mapping.values())
-    for qubit in circuit.qubits:
-        assert all_qubits.count(qubit) <= 1
-
-
-def read_distribution_file(distribution_fname: str) -> np.ndarray:
-    file = open("workspace/%s_distribution.txt" % distribution_fname, "r")
-    lines = file.readlines()
-    file.close()
-    distribution = np.zeros(len(lines[1:]), dtype=int)
-    for line in lines[1:]:
-        split_line = line.strip().split("\t")
-        gate_idx = int(split_line[0])
-        module_idx = int(split_line[1])
-        distribution[gate_idx] = module_idx
-    return distribution
