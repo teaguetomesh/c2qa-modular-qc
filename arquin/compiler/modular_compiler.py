@@ -42,9 +42,11 @@ class ModularCompiler:
         while remaining_virtual_circuit.size() > 0:
             print("*" * 20, "Recursion %d" % recursion_counter, "*" * 20)
             print("remaining_virtual_circuit size %d" % remaining_virtual_circuit.size())
-            
-            print("Step 1: distribute the virtual gates in remaining_virtual_circuit to modules")
-            vertex_weights, edges = arquin.converters.circuit_to_graph(circuit=remaining_virtual_circuit)
+
+            print("Step 1: Distribute the virtual gates in remaining_virtual_circuit to modules")
+            vertex_weights, edges = arquin.converters.circuit_to_graph(
+                circuit=remaining_virtual_circuit
+            )
             circuit_graph = arquin.converters.edges_to_source_graph(
                 edges=edges, vertex_weights=vertex_weights
             )
@@ -59,67 +61,88 @@ class ModularCompiler:
             )
             print(distribution)
             print("-" * 10)
-            
-            print("Step 2: assign the device_virtual_qubit to modules")
-            dv_2_mv_mapping = arquin.distribute.assign_device_virtual_qubits(
+
+            print("Step 2: Assign the device_virtual_qubit to modules")
+            arquin.distribute.assign_device_virtual_qubits(
                 distribution=distribution, circuit=remaining_virtual_circuit, device=self.device
             )
-            mv_2_dv_mapping = arquin.converters.reverse_dict(dv_2_mv_mapping)
-            for device_virtual_qubit in dv_2_mv_mapping:
-                module_index, module_virtual_qubit = dv_2_mv_mapping[device_virtual_qubit]
-                print("{} --> Module {:d} {}".format(device_virtual_qubit,module_index,module_virtual_qubit))
+            for device_virtual_qubit in self.device.dv_2_mv_mapping:
+                module_index, module_virtual_qubit = self.device.dv_2_mv_mapping[
+                    device_virtual_qubit
+                ]
+                print(
+                    "{} --> Module {:d} {}".format(
+                        device_virtual_qubit, module_index, module_virtual_qubit
+                    )
+                )
             print("-" * 10)
-            exit(1)
 
-            print("Step 3: greedy construction of the module virtual circuits")
-            next_circuit = arquin.comms.construct_module_virtual_circuits(
+            print("Step 3: Insert global communication")
+            self.global_comm(recursion_counter)
+            print("-" * 10)
+
+            print("Step 4: Greedy construction of the module virtual circuits")
+            next_virtual_circuit = arquin.distribute.construct_module_virtual_circuits(
                 circuit=remaining_virtual_circuit, device=self.device, distribution=distribution
             )
             print("-" * 10)
 
-            print("Step 4: local compile")
-            target_mp_2_mv_mappings = self.local_compile()
+            print("Step 5: local compile")
+            self.local_compile()
             print("-" * 10)
 
-            print("Step 5: Insert Global communication")
-            self.global_comm(target_mp_2_mv_mappings)
-            print("-" * 10)
-            exit(1)
-
-            # Step 6: combine
+            print("Step 6: combine")
             self.combine()
-            print("output circuit depth %d" % self.output_dag.depth())
+            print("output circuit depth {:d}".format(self.physical_circuit.depth()))
             # self.visualize(remaining_virtual_circuit=remaining_virtual_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
-            remaining_virtual_circuit = next_circuit
+            remaining_virtual_circuit = next_virtual_circuit
             recursion_counter += 1
 
-    def global_comm(self, target_mp_2_mv_mappings: Dict) -> None:
-        target_dp_2_dv_mappings = {}
-        for device_physical_qubit in self.device.dp_2_mp_mapping:
-            module_index, module_physical_qubit = self.device.dp_2_mp_mapping[device_physical_qubit]
-            module_virtual_qubit = target_mp_2_mv_mappings[module_index][module_physical_qubit]
-            device_virtual_qubit = mv_2_dv_mapping[(module_index,module_virtual_qubit)]
-            print(device_physical_qubit, device_virtual_qubit)
-        print("Inter module edges:", self.device.coarse_graph.edges)
+    def global_comm(self, recursion_counter: int) -> None:
+        if recursion_counter == 0:
+            print("First iteration does not need global communications")
+            for module in self.device.modules:
+                module.mv_2_dv_mapping = {}
+            for module_virtual_qubit in self.device.mv_2_dv_mapping:
+                device_virtual_qubit = self.device.mv_2_dv_mapping[module_virtual_qubit]
+                module_index, module_virtual_qubit = module_virtual_qubit
+                self.device.modules[module_index].mv_2_dv_mapping[
+                    module_virtual_qubit
+                ] = device_virtual_qubit
+        else:
+            print("Need global routing")
+            exit(1)
+        for module in self.device.modules:
+            print(
+                "Module {:d} mv_2_dv_mapping : {}".format(
+                    module.module_index, module.mv_2_dv_mapping
+                )
+            )
 
     def local_compile(self) -> None:
-        target_mp_2_mv_mappings = {}
         for module in self.device.modules:
-            target_mp_2_mv_mapping = module.compile()
-            target_mp_2_mv_mappings[module.module_index] = target_mp_2_mv_mapping
-        return target_mp_2_mv_mappings
+            module.compile()
+            module.update_mapping()
+            print(
+                "Module {:d} mp_2_mv_mapping : {}".format(
+                    module.module_index, module.mp_2_mv_mapping
+                )
+            )
 
     def combine(self) -> None:
+        print(self.device.mp_2_dp_mapping)
         for module in self.device.modules:
-            print(self.device.dp_2_mp_mapping)
-            print(self.device.dp_2_dv_mapping)
-            print(module.mp_2_mv_mapping)
-            print(module.circuit)
-            self.output_circuit.compose(
-                module.circuit,
-                qubits=self.output_circuit.qubits[module.offset : module.offset + len(module.qubits)],
+            print(module.physical_circuit)
+            device_physical_qargs = [
+                self.physical_circuit.qubits[
+                    self.device.mp_2_dp_mapping[(module.module_index, module_physical_qubit)]
+                ]
+                for module_physical_qubit in range(module.size)
+            ]
+            print(device_physical_qargs)
+            self.physical_circuit.compose(
+                module.physical_circuit, qubits=device_physical_qargs, inplace=True
             )
-            module.update_mapping()
 
     def visualize(
         self,

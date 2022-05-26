@@ -35,19 +35,19 @@ class Device:
         module_graphs: list of graphs of each module
         """
 
-        # Nodes are modules, edges are (module_i, module_j)
         self.coarse_graph = self._build_coarse_device_graph(global_edges)
         assert len(module_graphs) == self.coarse_graph.size()
-
-        self.modules, self.dp_2_mp_mapping = self._build_modules(
-            module_graphs
-        )
+        self.modules, self.dp_2_mp_mapping = self._build_modules(module_graphs)
         self.mp_2_dp_mapping = arquin.converters.reverse_dict(self.dp_2_mp_mapping)
-
-        # Nodes are device qubits, edges are (qubit_i, qubit_j)
         self.fine_graph = self._build_fine_device_graph(global_edges)
-
         self.size = sum([module.size for module in self.modules])
+        self.reset()
+
+    def reset(self):
+        self.dv_2_mv_mapping = None
+        self.mv_2_dv_mapping = None
+        self.dp_2_dv_mapping = None
+        self.dv_2_dp_mapping = None
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
         """Construct the device graph using the global edges."""

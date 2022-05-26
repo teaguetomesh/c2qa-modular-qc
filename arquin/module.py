@@ -23,13 +23,16 @@ class Module:
         self.graph = graph
         self.module_index = module_index
         self.size = self.graph.size()
+        self.reset()
+
+    def reset(self):
         self.virtual_circuit = qiskit.QuantumCircuit(self.graph.size())
-        self.mv_2_dv_mapping = {}
+        self.mv_2_dv_mapping = None
         self.mp_2_mv_mapping = None
 
     def add_virtual_gate(self, op, module_virtual_qargs) -> None:
         # print('{} Module {:d} {}'.format(op.name,self.module_index,module_virtual_qargs))
-        self.virtual_circuit.append(op,qargs=module_virtual_qargs)
+        self.virtual_circuit.append(op, qargs=module_virtual_qargs)
 
     def compile(self) -> None:
         coupling_map = arquin.converters.edges_to_coupling_map(self.graph.edges)
@@ -40,22 +43,26 @@ class Module:
             layout_method="sabre",
             routing_method="sabre",
         )
-        target_mp_2_mv_mapping = {}
-        for module_physical_qubit in self.physical_circuit._layout.get_physical_bits():
-            module_virtual_qubit = self.physical_circuit._layout.get_physical_bits()[module_physical_qubit]
-            target_mp_2_mv_mapping[module_physical_qubit] = module_virtual_qubit
-        return target_mp_2_mv_mapping
 
     def update_mapping(self) -> None:
         """
         Update the mapping based on the SWAPs in the circuit
         """
+        self.mp_2_mv_mapping = {}
+        for module_physical_qubit in self.physical_circuit._layout.get_physical_bits():
+            module_virtual_qubit = self.physical_circuit._layout.get_physical_bits()[
+                module_physical_qubit
+            ]
+            self.mp_2_mv_mapping[module_physical_qubit] = module_virtual_qubit
         physical_dag = qiskit.converters.circuit_to_dag(self.physical_circuit)
         for gate in physical_dag.topological_op_nodes():
             if gate.op.name == "swap":
-                module_physical_qargs = [self.physical_circuit.qubits.index(qubit) for qubit in gate.qargs]
-                module_virtual_qubits = [self.mp_2_mv_mapping[module_physical_qubit] for module_physical_qubit in module_physical_qargs]
-                print(module_physical_qargs,module_virtual_qubits)
+                module_physical_qargs = [
+                    self.physical_circuit.qubits.index(qubit) for qubit in gate.qargs
+                ]
+                module_virtual_qubits = [
+                    self.mp_2_mv_mapping[module_physical_qubit]
+                    for module_physical_qubit in module_physical_qargs
+                ]
                 self.mp_2_mv_mapping[module_physical_qargs[0]] = module_virtual_qubits[1]
                 self.mp_2_mv_mapping[module_physical_qargs[1]] = module_virtual_qubits[0]
-        print("mp_2_mv_mapping after SWAPs :", self.mp_2_mv_mapping)
