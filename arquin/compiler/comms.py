@@ -69,6 +69,9 @@ def assign_device_virtual_qubits(
             module.mv_2_dv_mapping[module_virtual_qubit] = device_virtual_qubit
             device.dv_2_mv_mapping[device_virtual_qubit] = (module_idx, module_virtual_qubit)
     check_qubit_assignment_valid(circuit, device)
+    for device_virtual_qubit in device.dv_2_mv_mapping:
+        module_index, module_virtual_qubit = device.dv_2_mv_mapping[device_virtual_qubit]
+        print("{} --> Module {:d} {}".format(device_virtual_qubit,module_index,module_virtual_qubit))
 
 
 def check_qubit_assignment_valid(circuit, device):

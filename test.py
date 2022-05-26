@@ -8,7 +8,7 @@ import arquin
 
 if __name__ == "__main__":
     num_modules = 3
-    module_size = 4
+    module_size = 8
     # Last qubit of module i is connected to first qubit of module i+1
     global_edges = [[[i, module_size - 1], [(i + 1) % num_modules, 0]] for i in range(num_modules)]
     module_graph = nx.cycle_graph(module_size)
@@ -20,10 +20,10 @@ if __name__ == "__main__":
 
     circuit = generate_circ(
         num_qubits=device.size,
-        depth=1,
-        circuit_type="regular",
+        depth=device.size,
+        circuit_type="random",
         reg_name="q",
-        connected_only=False,
+        connected_only=True,
         seed=None,
     )
 
