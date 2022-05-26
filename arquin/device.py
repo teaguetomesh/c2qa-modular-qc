@@ -39,9 +39,11 @@ class Device:
         self.coarse_graph = self._build_coarse_device_graph(global_edges)
         assert len(module_graphs) == self.coarse_graph.size()
 
-        self.modules, self.dp_2_mp_mapping, self.mp_2_dp_mapping = self._build_modules(
+        self.modules, self.dp_2_mp_mapping = self._build_modules(
             module_graphs
         )
+        self.mp_2_dp_mapping = arquin.converters.reverse_dict(self.dp_2_mp_mapping)
+        self.dv_2_mv_mapping = {}
 
         # Nodes are device qubits, edges are (qubit_i, qubit_j)
         self.fine_graph = self._build_fine_device_graph(global_edges)
@@ -50,7 +52,6 @@ class Device:
 
         circuit = qiskit.QuantumCircuit(self.size)
         self.dag = qiskit.converters.circuit_to_dag(circuit)
-        self.dp_2_dv_mapping, self.dv_2_dp_mapping = {}, {}
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
         """Construct the device graph using the global edges."""
@@ -62,16 +63,15 @@ class Device:
     def _build_modules(self, module_graphs: List[nx.Graph]) -> tuple:
         """Construct arquin.Module objects for each of the provided module graphs."""
         modules = []
-        dp_2_mp_mapping, mp_2_dp_mapping = {}, {}
-        device_qubit_counter = 0
+        dp_2_mp_mapping = {}
+        device_physical_qubit = 0
         for module_index, module_graph in enumerate(module_graphs):
             module = arquin.Module(graph=module_graph, module_index=module_index)
             modules.append(module)
-            for qubit in module.qubits:
-                dp_2_mp_mapping[device_qubit_counter] = (module_index, qubit)
-                mp_2_dp_mapping[(module_index, qubit)] = device_qubit_counter
-                device_qubit_counter += 1
-        return modules, dp_2_mp_mapping, mp_2_dp_mapping
+            for module_physical_qubit in range(module.size):
+                dp_2_mp_mapping[device_physical_qubit] = (module_index, module_physical_qubit)
+                device_physical_qubit += 1
+        return modules, dp_2_mp_mapping
 
     def _build_fine_device_graph(self, global_edges) -> nx.Graph:
         """Graph containing all physical qubits within the device"""

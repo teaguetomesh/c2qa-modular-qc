@@ -97,3 +97,9 @@ def edges_to_coupling_map(edges):
         coupling_map.append(list(edge))
         coupling_map.append(list(edge[::-1]))
     return coupling_map
+
+def reverse_dict(dictionary: Dict) -> Dict:
+    reverse_dict = {}
+    for key in dictionary:
+        reverse_dict[dictionary[key]] = key
+    return reverse_dict

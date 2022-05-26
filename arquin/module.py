@@ -21,56 +21,40 @@ class Module:
         index i=0. The module_index is used to map between module and device qubits.
         """
         self.graph = graph
-        self.qubits = list(sorted(graph.nodes))
         self.module_index = module_index
         self.size = self.graph.size()
-        circuit = qiskit.QuantumCircuit(self.graph.size())
-        self.dag = qiskit.converters.circuit_to_dag(circuit)
-        self.mp_2_mv_mapping = {}
+        self.virtual_circuit = qiskit.QuantumCircuit(self.graph.size())
+        self.mv_2_dv_mapping = {}
 
-    def add_gate(self, op, module_physical_qargs) -> None:
-        module_virtual_qargs = [self.mp_2_mv_mapping[module_physical_qubit[1]] for module_physical_qubit in module_physical_qargs]
-        print(op.name,module_virtual_qargs)
-        self.dag.apply_operation_back(op=op, qargs=module_virtual_qargs)
+    def add_virtual_gate(self, op, module_virtual_qargs) -> None:
+        # print('{} Module {:d} {}'.format(op.name,self.module_index,module_virtual_qargs))
+        self.virtual_circuit.append(op,qargs=module_virtual_qargs)
 
-    def compile(self) -> qiskit.QuantumCircuit:
+    def compile(self, has_initial_layout) -> None:
+        # print(self.circuit)
+        # print("mp_2_mv_mapping before SWAPs :", self.mp_2_mv_mapping)
+        if has_initial_layout:
+            initial_layout = self.mp_2_mv_mapping
+        else:
+            initial_layout = None
         coupling_map = arquin.converters.edges_to_coupling_map(self.graph.edges)
-        circuit = qiskit.converters.dag_to_circuit(self.dag)
-        compiled_circuit = qiskit.compiler.transpile(
-            circuit,
+        self.circuit = qiskit.compiler.transpile(
+            self.circuit,
             coupling_map=coupling_map,
-            layout_method="sabre",
+            initial_layout=initial_layout,
             routing_method="sabre",
         )
-        self.dag = qiskit.converters.circuit_to_dag(compiled_circuit)
-        return compiled_circuit
 
-    def update_mapping(self, circuit: qiskit.QuantumCircuit) -> None:
+    def update_mapping(self) -> None:
         """
         Update the mapping based on the SWAPs in the circuit
         """
-        print("mp_2_dv_mapping before compile :", self.mp_2_dv_mapping)
-        print("mp_2_mv_mapping before compile :", self.mp_2_mv_mapping)
-        new_mp_2_dv_mapping = copy.deepcopy(self.mp_2_dv_mapping)
-        for module_physical_qubit in circuit._layout.get_physical_bits():
-            module_virtual_qubit = circuit._layout.get_physical_bits()[module_physical_qubit]
-            device_virtual_qubit = self.mp_2_dv_mapping[module_physical_qubit]
-            print(module_physical_qubit, module_virtual_qubit, device_virtual_qubit)
-
-            # new_initial_mapping[module_physical_qubit] = self.mapping[
-            #     circuit.qubits.index(module_virtual_qubit)
-            # ]
-        exit(1)
-        self.mapping = new_initial_mapping
-        print("Mapping after compile :", self.mapping)
-        dag = qiskit.converters.circuit_to_dag(circuit)
+        dag = qiskit.converters.circuit_to_dag(self.circuit)
         for gate in dag.topological_op_nodes():
             if gate.op.name == "swap":
-                physical_qubits = [circuit.qubits.index(qarg) for qarg in gate.qargs]
-                device_qubit_0, device_qubit_1 = [
-                    self.mapping[physical_qubit] for physical_qubit in physical_qubits
-                ]
-                self.mapping[physical_qubits[0]] = device_qubit_1
-                self.mapping[physical_qubits[1]] = device_qubit_0
-        print("Final mapping after SWAPs :", self.mapping)
-        print("-" * 10)
+                module_physical_qargs = [self.circuit.qubits.index(qubit) for qubit in gate.qargs]
+                module_virtual_qubits = [self.mp_2_mv_mapping[module_physical_qubit] for module_physical_qubit in module_physical_qargs]
+                self.mp_2_mv_mapping[module_physical_qargs[0]] = module_virtual_qubits[1]
+                self.mp_2_mv_mapping[module_physical_qargs[1]] = module_virtual_qubits[0]
+        # print(self.circuit)
+        # print("mp_2_mv_mapping after SWAPs :", self.mp_2_mv_mapping)

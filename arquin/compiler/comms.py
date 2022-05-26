@@ -20,7 +20,7 @@ def distribute_gates(source_fname: str, target_fname: str) -> None:
     )
 
 
-def construct_local_circuits(
+def construct_module_virtual_circuits(
     circuit: qiskit.QuantumCircuit, device: arquin.device.Device, distribution: np.ndarray
 ) -> Tuple[qiskit.QuantumCircuit, List]:
     """
@@ -29,23 +29,17 @@ def construct_local_circuits(
     2. Assign as many gates as possible for each module
     """
     remaining_dag = qiskit.converters.circuit_to_dag(circuit)
-
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
     for gate, module_idx in zip(topological_op_nodes, distribution):
-        device_physical_qargs = [device.dv_2_dp_mapping[device_virtual_qubit] for device_virtual_qubit in gate.qargs]
-        module_physical_qargs = [device.dp_2_mp_mapping[device_physical_qubit] for device_physical_qubit in device_physical_qargs]
-        in_module = all([module_physical_qarg[0]==module_idx for module_physical_qarg in module_physical_qargs])
-        no_dependence = all([device_virtual_qubit not in inactive_qubits for device_virtual_qubit in gate.qargs])
+        device_virtual_qargs = gate.qargs
+        module_virtual_qargs = [device.dv_2_mv_mapping[device_virtual_qubit] for device_virtual_qubit in device_virtual_qargs]
+        in_module = all([module_virtual_qubit[0]==module_idx for module_virtual_qubit in module_virtual_qargs])
+        no_dependence = all([device_virtual_qubit not in inactive_qubits for device_virtual_qubit in device_virtual_qargs])
         if in_module and no_dependence:
             module = device.modules[module_idx]
-            module.add_gate(gate.op, module_physical_qargs)
-        print(gate.op.name,gate.qargs,module_idx)
-        print(device_physical_qargs)
-        print(module_physical_qargs)
-        exit(1)
-        success = module.add_device_virtual_gate(gate, inactive_qubits)
-        if success:
+            module_virtual_qargs = [module_virtual_qubit[1] for module_virtual_qubit in module_virtual_qargs]
+            module.add_virtual_gate(gate.op, module_virtual_qargs)
             remaining_dag.remove_op_node(gate)
         else:
             """
@@ -59,26 +53,31 @@ def construct_local_circuits(
     return remaining_circuit
 
 
-def assign_qubits(
+def assign_device_virtual_qubits(
     distribution: np.ndarray, circuit: qiskit.QuantumCircuit, device: arquin.device.Device
 ) -> Dict:
     dag = qiskit.converters.circuit_to_dag(circuit)
     topological_op_nodes = list(dag.topological_op_nodes())
-    module_qubit_assignments: Dict = {module_idx: [] for module_idx in range(len(device.modules))}
-    for qubit in dag.qubits:
-        gates_on_qubit = list(dag.nodes_on_wire(qubit, only_ops=True))
+    for device_virtual_qubit in dag.qubits:
+        gates_on_qubit = list(dag.nodes_on_wire(device_virtual_qubit, only_ops=True))
         if len(gates_on_qubit) > 0:
             first_gate = gates_on_qubit[0]
             gate_idx = topological_op_nodes.index(first_gate)
             module_idx = distribution[gate_idx]
-            module_qubit_assignments[module_idx].append(qubit)
+            module = device.modules[module_idx]
+            module_virtual_qubit = module.virtual_circuit.qubits[len(module.mv_2_dv_mapping)]
+            module.mv_2_dv_mapping[module_virtual_qubit] = device_virtual_qubit
+            device.dv_2_mv_mapping[device_virtual_qubit] = (module_idx, module_virtual_qubit)
+    check_qubit_assignment_valid(circuit, device)
+
+
+def check_qubit_assignment_valid(circuit, device):
     all_qubits = []
-    for module_idx in module_qubit_assignments:
-        assert len(module_qubit_assignments[module_idx]) <= len(device.modules[module_idx].qubits)
-        all_qubits += module_qubit_assignments[module_idx]
+    for module in device.modules:
+        assert len(module.mv_2_dv_mapping) <= module.size
+        all_qubits += list(module.mv_2_dv_mapping.values())
     for qubit in circuit.qubits:
         assert all_qubits.count(qubit) <= 1
-    return module_qubit_assignments
 
 
 def read_distribution_file(distribution_fname: str) -> np.ndarray:
