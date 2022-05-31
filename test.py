@@ -1,5 +1,4 @@
 import networkx as nx
-import matplotlib.pyplot as plt
 import qiskit
 
 from qiskit_helper_functions.benchmarks import generate_circ
@@ -8,15 +7,14 @@ import arquin
 
 if __name__ == "__main__":
     num_modules = 3
-    module_size = 8
+    module_size = 6
     # Last qubit of module i is connected to first qubit of module i+1
     global_edges = [[[i, module_size - 1], [(i + 1) % num_modules, 0]] for i in range(num_modules)]
     module_graph = nx.cycle_graph(module_size)
     device = arquin.Device(
         global_edges=global_edges, module_graphs=[module_graph for _ in range(num_modules)]
     )
-    # for var in vars(device):
-    #     print(var,vars(device)[var])
+    device.plot(fname='ring')
 
     circuit = generate_circ(
         num_qubits=device.size,

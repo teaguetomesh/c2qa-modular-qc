@@ -5,6 +5,7 @@ from typing import Dict, List
 import networkx as nx
 import numpy as np
 import qiskit
+import matplotlib.pyplot as plt
 
 import arquin
 
@@ -89,3 +90,8 @@ class Device:
         graph.add_edges_from(intermodule_edges)
 
         return graph
+
+    def plot(self, fname):
+        nx.draw(self.fine_graph,with_labels=True)
+        plt.savefig('paper_plots/%s.pdf'%fname)
+        plt.close()
