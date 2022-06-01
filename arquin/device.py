@@ -37,7 +37,7 @@ class Device:
         """
 
         self.coarse_graph = self._build_coarse_device_graph(global_edges)
-        assert len(module_graphs) == self.coarse_graph.size()
+        assert len(module_graphs) == self.coarse_graph.number_of_nodes()
         self.modules, self.dp_2_mp_mapping = self._build_modules(module_graphs)
         self.mp_2_dp_mapping = arquin.converters.reverse_dict(self.dp_2_mp_mapping)
         self.fine_graph = self._build_fine_device_graph(global_edges)
@@ -52,7 +52,7 @@ class Device:
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
         """Construct the device graph using the global edges."""
-        device_graph = nx.Graph()
+        device_graph = nx.MultiGraph()
         intermodule_edges = [[edge[0][0], edge[1][0]] for edge in global_edges]
         device_graph.add_edges_from(intermodule_edges)
         return device_graph
@@ -92,6 +92,9 @@ class Device:
         return graph
 
     def plot(self, fname):
-        nx.draw(self.fine_graph,with_labels=True)
-        plt.savefig('paper_plots/%s.pdf'%fname)
+        nx.draw(self.fine_graph, with_labels=True)
+        plt.savefig("paper_plots/fine_%s.pdf" % fname)
+        plt.close()
+        nx.draw(self.coarse_graph, with_labels=True)
+        plt.savefig("paper_plots/coarse_%s.pdf" % fname)
         plt.close()

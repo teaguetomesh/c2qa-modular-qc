@@ -28,7 +28,7 @@ class ModularCompiler:
             subprocess.run(["rm", "-rf", self.work_dir])
         os.makedirs(self.work_dir)
 
-    def run(self) -> None:
+    def run(self, visualize: bool) -> None:
         print("Step 0: convert the device topology graph to SCOTCH format")
         device_graph = arquin.converters.edges_to_source_graph(
             edges=self.device.coarse_graph.edges, vertex_weights=None
@@ -94,7 +94,14 @@ class ModularCompiler:
             print("Step 6: combine")
             self.combine()
             print("output circuit depth {:d}".format(self.physical_circuit.depth()))
-            # self.visualize(remaining_virtual_circuit=remaining_virtual_circuit, local_compiled_circuits=local_compiled_circuits, next_circuit=next_circuit)
+            if visualize:
+                arquin.visualize.plot_recursion(
+                    recursion_counter=recursion_counter,
+                    device=self.device,
+                    remaining_virtual_circuit=remaining_virtual_circuit,
+                    distribution=distribution,
+                    output_circuit=self.physical_circuit,
+                )
             remaining_virtual_circuit = next_virtual_circuit
             recursion_counter += 1
 
@@ -143,20 +150,3 @@ class ModularCompiler:
             self.physical_circuit.compose(
                 module.physical_circuit, qubits=device_physical_qargs, inplace=True
             )
-
-    def visualize(
-        self,
-        curr_circuit: qiskit.QuantumCircuit,
-        local_compiled_circuits: List[qiskit.QuantumCircuit],
-        next_circuit: qiskit.QuantumCircuit,
-    ) -> None:
-        curr_circuit.draw(output="text", filename="./workspace/curr_circuit.txt")
-        module_counter = 0
-        for module, local_compiled_circuit in zip(self.device.modules, local_compiled_circuits):
-            local_compiled_circuit.draw(
-                output="text", filename="./workspace/module_%d.txt" % module_counter
-            )
-            module_counter += 1
-        next_circuit.draw(output="text", filename="./workspace/next_circuit.txt")
-        output_circuit = qiskit.converters.dag_to_circuit(self.output_dag)
-        output_circuit.draw(output="text", filename="./workspace/output.txt")
