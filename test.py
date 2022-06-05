@@ -30,7 +30,6 @@ if __name__ == "__main__":
         circuit, coupling_map=coupling_map, layout_method="sabre", routing_method="sabre"
     )
     print("Qiskit depth %d --> %d" % (circuit.depth(), transpiled_circuit.depth()))
-    exit(1)
 
     compiler = arquin.ModularCompiler(
         circuit=circuit, circuit_name="random", device=device, device_name="ring"

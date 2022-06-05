@@ -2,4 +2,4 @@ from arquin.device import Device
 from arquin.module import Module
 from arquin import converters
 from arquin.modular_compiler import ModularCompiler
-from arquin.frozen import FrozenClass
+from arquin import distribute

@@ -55,6 +55,7 @@ class Device(FrozenClass):
         self.mv_2_dv_mapping = None
         self.dp_2_dv_mapping = None
         self.dv_2_dp_mapping = None
+        self.virtual_circuit = None
         self._freeze()
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
