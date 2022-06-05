@@ -32,9 +32,9 @@ def read_distribution_file(data_dir: str) -> np.ndarray:
 
 
 def assign_device_virtual_qubits(
-    gate_distribution: np.ndarray, circuit: qiskit.QuantumCircuit, device: arquin.device.Device
+    gate_distribution: np.ndarray, device: arquin.device.Device
 ) -> None:
-    dag = qiskit.converters.circuit_to_dag(circuit)
+    dag = qiskit.converters.circuit_to_dag(device.virtual_circuit)
     topological_op_nodes = list(dag.topological_op_nodes())
     qubit_distribution = {module.index: [] for module in device.modules}
     for device_virtual_qubit in dag.qubits:

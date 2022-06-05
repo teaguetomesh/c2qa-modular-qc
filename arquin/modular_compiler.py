@@ -41,9 +41,6 @@ class ModularCompiler:
             print("*" * 20, "Recursion %d" % recursion_counter, "*" * 20)
             print("Remaining virtual_circuit size %d" % self.device.virtual_circuit.size())
 
-            for module in self.device.modules:
-                module.reset_virtual_circuit()
-
             print("Step 1: Distribute the virtual gates in remaining virtual_circuit to modules")
             vertex_weights, edges = arquin.converters.circuit_to_graph(
                 circuit=self.device.virtual_circuit
@@ -60,11 +57,11 @@ class ModularCompiler:
             print("Step 2: Assign the device_virtual_qubit to modules")
             qubit_distribution = arquin.distribute.assign_device_virtual_qubits(
                 gate_distribution=gate_distribution,
-                circuit=self.device.virtual_circuit,
                 device=self.device,
             )
             for module_index in qubit_distribution:
                 print("Module {:d} : {}".format(module_index, qubit_distribution[module_index]))
+                self.device.modules[module_index].virtual_circuit = qiskit.QuantumCircuit(len(qubit_distribution[module_index]))
             print("-" * 10)
 
             print("Step 3: Insert global communication")

@@ -33,11 +33,8 @@ class Module(FrozenClass):
         self.size = self.graph.size()
         self.mv_2_dv_mapping = None
         self.mp_2_mv_mapping = None
-        self.virtual_circuit = qiskit.QuantumCircuit(self.size)
+        self.virtual_circuit = None
         self._freeze()
-
-    def reset_virtual_circuit(self):
-        self.virtual_circuit = qiskit.QuantumCircuit(self.size)
 
     def add_virtual_gate(self, op, module_virtual_qargs) -> None:
         # print('{} Module {:d} {}'.format(op.name,self.module_index,module_virtual_qargs))
