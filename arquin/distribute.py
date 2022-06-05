@@ -48,14 +48,14 @@ def assign_device_virtual_qubits(
 
 
 def construct_module_virtual_circuits(
-    circuit: qiskit.QuantumCircuit, device: arquin.device.Device, gate_distribution: np.ndarray
+    device: arquin.device.Device, gate_distribution: np.ndarray
 ) -> Tuple[qiskit.QuantumCircuit, List]:
     """
     Construct the most number of gates for each module that can be scheduled without global comms
     1. Assign the qubits to each module based on front layer gates
     2. Assign as many gates as possible for each module
     """
-    remaining_dag = qiskit.converters.circuit_to_dag(circuit)
+    remaining_dag = qiskit.converters.circuit_to_dag(device.virtual_circuit)
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
     for gate, module_idx in zip(topological_op_nodes, gate_distribution):
@@ -78,7 +78,7 @@ def construct_module_virtual_circuits(
             module_virtual_qargs = [
                 module_virtual_qubit[1] for module_virtual_qubit in module_virtual_qargs
             ]
-            module.add_virtual_gate(gate.op, module_virtual_qargs)
+            module.virtual_circuit.append(gate.op, qargs=module_virtual_qargs)
             remaining_dag.remove_op_node(gate)
         else:
             """

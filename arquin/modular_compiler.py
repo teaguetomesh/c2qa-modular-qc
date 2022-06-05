@@ -67,17 +67,20 @@ class ModularCompiler:
             print("Step 3: Insert global communication")
             self.global_comm(qubit_distribution)
             print("-" * 10)
-            exit(1)
 
             print("Step 4: Greedy construction of the module virtual circuits")
             next_virtual_circuit = arquin.distribute.construct_module_virtual_circuits(
-                circuit=remaining_virtual_circuit, device=self.device, gate_distribution=gate_distribution
+                device=self.device, gate_distribution=gate_distribution
             )
+            for module in self.device.modules:
+                print("Module {:d}".format(module.index))
+                print(module.virtual_circuit)
             print("-" * 10)
 
             print("Step 5: local compile")
             self.local_compile()
             print("-" * 10)
+            exit(1)
 
             print("Step 6: combine")
             self.combine()
@@ -96,14 +99,15 @@ class ModularCompiler:
     def global_comm(self, qubit_distribution: int) -> None:
         if self.device.mv_2_dv_mapping is None:
             print("First iteration does not need global communications")
-            self.device.dv_2_mv_mapping = {}
+            self.device.mv_2_dv_mapping = {}
             for module in self.device.modules:
                 module.mv_2_dv_mapping = {}
                 for qubit_counter in range(len(qubit_distribution[module.index])):
                     device_virtual_qubit = qubit_distribution[module.index][qubit_counter]
                     module_virtual_qubit = module.virtual_circuit.qubits[qubit_counter]
                     module.mv_2_dv_mapping[module_virtual_qubit] = device_virtual_qubit
-                    self.device.dv_2_mv_mapping[device_virtual_qubit] = (module.index, module_virtual_qubit)
+                    self.device.mv_2_dv_mapping[(module.index, module_virtual_qubit)] = device_virtual_qubit
+            self.device.dv_2_mv_mapping = arquin.converters.reverse_dict(self.device.mv_2_dv_mapping)
         else:
             print("Need global routing")
             exit(1)
@@ -117,11 +121,9 @@ class ModularCompiler:
         for module in self.device.modules:
             module.compile()
             module.update_mapping()
-            print(
-                "Module {:d} mp_2_mv_mapping : {}".format(
-                    module.module_index, module.mp_2_mv_mapping
-                )
-            )
+            print("Module {:d}".format(module.index))
+            print(module.physical_circuit)
+            print("mp_2_mv_mapping : {}".format(module.mp_2_mv_mapping))
 
     def combine(self) -> None:
         print(self.device.mp_2_dp_mapping)

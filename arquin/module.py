@@ -31,20 +31,17 @@ class Module(FrozenClass):
         self.graph = graph
         self.index = index
         self.size = self.graph.size()
+        self.coupling_map = arquin.converters.edges_to_coupling_map(self.graph.edges)
         self.mv_2_dv_mapping = None
         self.mp_2_mv_mapping = None
         self.virtual_circuit = None
+        self.physical_circuit = None
         self._freeze()
 
-    def add_virtual_gate(self, op, module_virtual_qargs) -> None:
-        # print('{} Module {:d} {}'.format(op.name,self.module_index,module_virtual_qargs))
-        self.virtual_circuit.append(op, qargs=module_virtual_qargs)
-
     def compile(self) -> None:
-        coupling_map = arquin.converters.edges_to_coupling_map(self.graph.edges)
         self.physical_circuit = qiskit.compiler.transpile(
             self.virtual_circuit,
-            coupling_map=coupling_map,
+            coupling_map=self.coupling_map,
             initial_layout=self.mp_2_mv_mapping,
             layout_method="sabre",
             routing_method="sabre",
