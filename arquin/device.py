@@ -60,7 +60,7 @@ class Device:
         dp_2_mp_mapping = {}
         device_physical_qubit = 0
         for module_index, module_graph in enumerate(module_graphs):
-            module = arquin.Module(graph=module_graph, module_index=module_index)
+            module = arquin.Module(graph=module_graph, index=module_index)
             modules.append(module)
             for module_physical_qubit in range(module.size):
                 dp_2_mp_mapping[device_physical_qubit] = (module_index, module_physical_qubit)

@@ -41,6 +41,9 @@ class ModularCompiler:
             print("*" * 20, "Recursion %d" % recursion_counter, "*" * 20)
             print("remaining_virtual_circuit size %d" % remaining_virtual_circuit.size())
 
+            for module in self.device.modules:
+                module.reset_virtual_circuit()
+
             print("Step 1: Distribute the virtual gates in remaining_virtual_circuit to modules")
             vertex_weights, edges = arquin.converters.circuit_to_graph(
                 circuit=remaining_virtual_circuit
@@ -56,16 +59,18 @@ class ModularCompiler:
 
             print("Step 2: Assign the device_virtual_qubit to modules")
             qubit_distribution = arquin.distribute.assign_device_virtual_qubits(
-                distribution=gate_distribution, circuit=remaining_virtual_circuit, device=self.device
+                distribution=gate_distribution,
+                circuit=remaining_virtual_circuit,
+                device=self.device,
             )
             for module_index in qubit_distribution:
                 print("Module {:d} : {}".format(module_index, qubit_distribution[module_index]))
             print("-" * 10)
-            exit(1)
 
             print("Step 3: Insert global communication")
-            self.global_comm(recursion_counter)
+            self.global_comm(qubit_distribution)
             print("-" * 10)
+            exit(1)
 
             print("Step 4: Greedy construction of the module virtual circuits")
             next_virtual_circuit = arquin.distribute.construct_module_virtual_circuits(
@@ -91,26 +96,26 @@ class ModularCompiler:
             remaining_virtual_circuit = next_virtual_circuit
             recursion_counter += 1
 
-    def global_comm(self, recursion_counter: int) -> None:
-        if recursion_counter == 0:
+    def global_comm(self, qubit_distribution: int) -> None:
+        if self.device.dp_2_dv_mapping is None:
             print("First iteration does not need global communications")
             for module in self.device.modules:
                 module.mv_2_dv_mapping = {}
-            for module_virtual_qubit in self.device.mv_2_dv_mapping:
-                device_virtual_qubit = self.device.mv_2_dv_mapping[module_virtual_qubit]
-                module_index, module_virtual_qubit = module_virtual_qubit
-                self.device.modules[module_index].mv_2_dv_mapping[
-                    module_virtual_qubit
-                ] = device_virtual_qubit
+                for qubit_counter in range(len(qubit_distribution[module.index])):
+                    device_virtual_qubit = qubit_distribution[module.index][qubit_counter]
+                    module_virtual_qubit = module.virtual_circuit.qubits[qubit_counter]
+                    module.mv_2_dv_mapping[module_virtual_qubit] = device_virtual_qubit
         else:
             print("Need global routing")
             exit(1)
         for module in self.device.modules:
-            print(
-                "Module {:d} mv_2_dv_mapping : {}".format(
-                    module.module_index, module.mv_2_dv_mapping
+            print("Module {:d} mv_2_dv_mapping :".format(module.index))
+            for module_virtual_qubit in module.mv_2_dv_mapping:
+                print(
+                    "{} --> {}".format(
+                        module_virtual_qubit, module.mv_2_dv_mapping[module_virtual_qubit]
+                    )
                 )
-            )
 
     def local_compile(self) -> None:
         for module in self.device.modules:

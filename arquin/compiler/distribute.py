@@ -36,7 +36,7 @@ def assign_device_virtual_qubits(
 ) -> None:
     dag = qiskit.converters.circuit_to_dag(circuit)
     topological_op_nodes = list(dag.topological_op_nodes())
-    qubit_distribution = {module.module_index:[] for module in device.modules}
+    qubit_distribution = {module.index: [] for module in device.modules}
     for device_virtual_qubit in dag.qubits:
         gates_on_qubit = list(dag.nodes_on_wire(device_virtual_qubit, only_ops=True))
         if len(gates_on_qubit) > 0:

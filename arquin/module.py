@@ -15,20 +15,19 @@ class Module:
     mp_2_dv_mapping: module to device, physical to virtual mapping
     """
 
-    def __init__(self, graph: nx.Graph, module_index: int) -> None:
+    def __init__(self, graph: nx.Graph, index: int) -> None:
         """
         The module graph represents the coupling map between contiguously labelled module qubits starting at
         index i=0. The module_index is used to map between module and device qubits.
         """
         self.graph = graph
-        self.module_index = module_index
+        self.index = index
         self.size = self.graph.size()
-        self.reset()
-
-    def reset(self):
-        self.virtual_circuit = qiskit.QuantumCircuit(self.graph.size())
         self.mv_2_dv_mapping = None
         self.mp_2_mv_mapping = None
+
+    def reset_virtual_circuit(self):
+        self.virtual_circuit = qiskit.QuantumCircuit(self.size)
 
     def add_virtual_gate(self, op, module_virtual_qargs) -> None:
         # print('{} Module {:d} {}'.format(op.name,self.module_index,module_virtual_qargs))
