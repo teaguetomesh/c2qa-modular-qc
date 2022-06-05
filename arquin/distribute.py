@@ -32,7 +32,7 @@ def read_distribution_file(data_dir: str) -> np.ndarray:
 
 
 def assign_device_virtual_qubits(
-    distribution: np.ndarray, circuit: qiskit.QuantumCircuit, device: arquin.device.Device
+    gate_distribution: np.ndarray, circuit: qiskit.QuantumCircuit, device: arquin.device.Device
 ) -> None:
     dag = qiskit.converters.circuit_to_dag(circuit)
     topological_op_nodes = list(dag.topological_op_nodes())
@@ -42,13 +42,13 @@ def assign_device_virtual_qubits(
         if len(gates_on_qubit) > 0:
             first_gate = gates_on_qubit[0]
             gate_idx = topological_op_nodes.index(first_gate)
-            module_idx = distribution[gate_idx]
+            module_idx = gate_distribution[gate_idx]
             qubit_distribution[module_idx].append(device_virtual_qubit)
     return qubit_distribution
 
 
 def construct_module_virtual_circuits(
-    circuit: qiskit.QuantumCircuit, device: arquin.device.Device, distribution: np.ndarray
+    circuit: qiskit.QuantumCircuit, device: arquin.device.Device, gate_distribution: np.ndarray
 ) -> Tuple[qiskit.QuantumCircuit, List]:
     """
     Construct the most number of gates for each module that can be scheduled without global comms
@@ -58,7 +58,7 @@ def construct_module_virtual_circuits(
     remaining_dag = qiskit.converters.circuit_to_dag(circuit)
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
-    for gate, module_idx in zip(topological_op_nodes, distribution):
+    for gate, module_idx in zip(topological_op_nodes, gate_distribution):
         device_virtual_qargs = gate.qargs
         module_virtual_qargs = [
             device.dv_2_mv_mapping[device_virtual_qubit]

@@ -59,7 +59,7 @@ class ModularCompiler:
 
             print("Step 2: Assign the device_virtual_qubit to modules")
             qubit_distribution = arquin.distribute.assign_device_virtual_qubits(
-                distribution=gate_distribution,
+                gate_distribution=gate_distribution,
                 circuit=remaining_virtual_circuit,
                 device=self.device,
             )
@@ -74,7 +74,7 @@ class ModularCompiler:
 
             print("Step 4: Greedy construction of the module virtual circuits")
             next_virtual_circuit = arquin.distribute.construct_module_virtual_circuits(
-                circuit=remaining_virtual_circuit, device=self.device, distribution=distribution
+                circuit=remaining_virtual_circuit, device=self.device, gate_distribution=gate_distribution
             )
             print("-" * 10)
 
@@ -97,7 +97,7 @@ class ModularCompiler:
             recursion_counter += 1
 
     def global_comm(self, qubit_distribution: int) -> None:
-        if self.device.dp_2_dv_mapping is None:
+        if self.device.mv_2_dv_mapping is None:
             print("First iteration does not need global communications")
             for module in self.device.modules:
                 module.mv_2_dv_mapping = {}
@@ -105,6 +105,7 @@ class ModularCompiler:
                     device_virtual_qubit = qubit_distribution[module.index][qubit_counter]
                     module_virtual_qubit = module.virtual_circuit.qubits[qubit_counter]
                     module.mv_2_dv_mapping[module_virtual_qubit] = device_virtual_qubit
+                    self.device.dv_2_mv_mapping[device_virtual_qubit] = (module.index, module_virtual_qubit)
         else:
             print("Need global routing")
             exit(1)
@@ -116,6 +117,7 @@ class ModularCompiler:
                         module_virtual_qubit, module.mv_2_dv_mapping[module_virtual_qubit]
                     )
                 )
+        print(self.device.dv_2_mv_mapping)
 
     def local_compile(self) -> None:
         for module in self.device.modules:

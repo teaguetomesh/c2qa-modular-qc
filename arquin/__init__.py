@@ -1,17 +1,5 @@
-from arquin.compiler import comms
-from arquin.compiler import converters
-from arquin.compiler import distribute
-from arquin.compiler import visualize
-from arquin.compiler.modular_compiler import ModularCompiler
 from arquin.device import Device
 from arquin.module import Module
-
-__all__ = [
-    "comms",
-    "converters",
-    "distribute",
-    "visualize",
-    "ModularCompiler",
-    "Device",
-    "Module",
-]
+from arquin import converters
+from arquin.modular_compiler import ModularCompiler
+from arquin.frozen import FrozenClass

@@ -9,8 +9,17 @@ import matplotlib.pyplot as plt
 
 import arquin
 
+class FrozenClass(object):
+    __isfrozen = False
+    def __setattr__(self, key, value):
+        if self.__isfrozen and not hasattr(self, key):
+            raise TypeError( "%r is a frozen class" % self )
+        object.__setattr__(self, key, value)
 
-class Device:
+    def _freeze(self):
+        self.__isfrozen = True
+
+class Device(FrozenClass):
     """Class representing a single quantum computer.
 
     Provides the properties ``graph``, ``modules``, ``global_edges``, ``local_edges``, and ``size``.
@@ -46,6 +55,7 @@ class Device:
         self.mv_2_dv_mapping = None
         self.dp_2_dv_mapping = None
         self.dv_2_dp_mapping = None
+        self._freeze()
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
         """Construct the device graph using the global edges."""

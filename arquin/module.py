@@ -1,12 +1,20 @@
 import copy
-
 import networkx as nx
 import qiskit
 
 import arquin
 
+class FrozenClass(object):
+    __isfrozen = False
+    def __setattr__(self, key, value):
+        if self.__isfrozen and not hasattr(self, key):
+            raise TypeError( "%r is a frozen class" % self )
+        object.__setattr__(self, key, value)
 
-class Module:
+    def _freeze(self):
+        self.__isfrozen = True
+
+class Module(FrozenClass):
     """Class representing a single module within a distributed quantum computer.
 
     Provides properties ``graph``, ``qubits``, ``module_index``, ``size``, ``dag``, and ``mapping``.
@@ -25,6 +33,7 @@ class Module:
         self.size = self.graph.size()
         self.mv_2_dv_mapping = None
         self.mp_2_mv_mapping = None
+        self._freeze()
 
     def reset_virtual_circuit(self):
         self.virtual_circuit = qiskit.QuantumCircuit(self.size)
