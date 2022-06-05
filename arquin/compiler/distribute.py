@@ -36,21 +36,15 @@ def assign_device_virtual_qubits(
 ) -> None:
     dag = qiskit.converters.circuit_to_dag(circuit)
     topological_op_nodes = list(dag.topological_op_nodes())
-    device.dv_2_mv_mapping = {}
-    module_virtual_qubit_counter = {module.module_index: 0 for module in device.modules}
+    qubit_distribution = {module.module_index:[] for module in device.modules}
     for device_virtual_qubit in dag.qubits:
         gates_on_qubit = list(dag.nodes_on_wire(device_virtual_qubit, only_ops=True))
         if len(gates_on_qubit) > 0:
             first_gate = gates_on_qubit[0]
             gate_idx = topological_op_nodes.index(first_gate)
             module_idx = distribution[gate_idx]
-            module = device.modules[module_idx]
-            module_virtual_qubit = module.virtual_circuit.qubits[
-                module_virtual_qubit_counter[module_idx]
-            ]
-            module_virtual_qubit_counter[module_idx] += 1
-            device.dv_2_mv_mapping[device_virtual_qubit] = (module_idx, module_virtual_qubit)
-    device.mv_2_dv_mapping = arquin.converters.reverse_dict(device.dv_2_mv_mapping)
+            qubit_distribution[module_idx].append(device_virtual_qubit)
+    return qubit_distribution
 
 
 def construct_module_virtual_circuits(

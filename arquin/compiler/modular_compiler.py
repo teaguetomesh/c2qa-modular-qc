@@ -50,23 +50,16 @@ class ModularCompiler:
             )
             arquin.converters.write_source_graph_file(graph=circuit_graph, save_dir=self.data_dir)
             arquin.distribute.distribute_gates(data_dir=self.data_dir)
-            distribution = arquin.distribute.read_distribution_file(data_dir=self.data_dir)
-            print(distribution)
+            gate_distribution = arquin.distribute.read_distribution_file(data_dir=self.data_dir)
+            print(gate_distribution)
             print("-" * 10)
 
             print("Step 2: Assign the device_virtual_qubit to modules")
-            arquin.distribute.assign_device_virtual_qubits(
-                distribution=distribution, circuit=remaining_virtual_circuit, device=self.device
+            qubit_distribution = arquin.distribute.assign_device_virtual_qubits(
+                distribution=gate_distribution, circuit=remaining_virtual_circuit, device=self.device
             )
-            for device_virtual_qubit in self.device.dv_2_mv_mapping:
-                module_index, module_virtual_qubit = self.device.dv_2_mv_mapping[
-                    device_virtual_qubit
-                ]
-                print(
-                    "{} --> Module {:d} {}".format(
-                        device_virtual_qubit, module_index, module_virtual_qubit
-                    )
-                )
+            for module_index in qubit_distribution:
+                print("Module {:d} : {}".format(module_index, qubit_distribution[module_index]))
             print("-" * 10)
             exit(1)
 
