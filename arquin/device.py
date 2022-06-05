@@ -42,9 +42,6 @@ class Device:
         self.mp_2_dp_mapping = arquin.converters.reverse_dict(self.dp_2_mp_mapping)
         self.fine_graph = self._build_fine_device_graph(global_edges)
         self.size = sum([module.size for module in self.modules])
-        self.reset()
-
-    def reset(self):
         self.dv_2_mv_mapping = None
         self.mv_2_dv_mapping = None
         self.dp_2_dv_mapping = None
@@ -91,10 +88,10 @@ class Device:
 
         return graph
 
-    def plot(self, fname):
+    def plot(self, save_dir):
         nx.draw(self.fine_graph, with_labels=True)
-        plt.savefig("paper_plots/fine_%s.pdf" % fname)
+        plt.savefig("%s/fine_device.pdf" % (save_dir))
         plt.close()
         nx.draw(self.coarse_graph, with_labels=True)
-        plt.savefig("paper_plots/coarse_%s.pdf" % fname)
+        plt.savefig("%s/coarse_device.pdf" % (save_dir))
         plt.close()

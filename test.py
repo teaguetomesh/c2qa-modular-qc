@@ -14,7 +14,7 @@ if __name__ == "__main__":
     device = arquin.Device(
         global_edges=global_edges, module_graphs=[module_graph for _ in range(num_modules)]
     )
-    device.plot(fname="ring")
+    device.plot(save_dir="figures")
 
     circuit = generate_circ(
         num_qubits=device.size,
@@ -29,9 +29,9 @@ if __name__ == "__main__":
     transpiled_circuit = qiskit.compiler.transpile(
         circuit, coupling_map=coupling_map, layout_method="sabre", routing_method="sabre"
     )
-    print(f"Qiskit depth {circuit.depth()} --> {transpiled_circuit.depth()}")
+    print("Qiskit depth %d --> %d" % (circuit.depth(), transpiled_circuit.depth()))
 
     compiler = arquin.ModularCompiler(
-        circuit=circuit, circuit_name="regular", device=device, device_name="ring"
+        circuit=circuit, circuit_name="random", device=device, device_name="ring"
     )
     compiler.run(visualize=True)

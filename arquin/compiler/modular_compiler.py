@@ -23,19 +23,17 @@ class ModularCompiler:
         self.device = device
         self.device_name = device_name
         self.physical_circuit = qiskit.QuantumCircuit(self.device.size)
-        self.work_dir = "./workspace/"
-        if os.path.exists(self.work_dir):
-            subprocess.run(["rm", "-rf", self.work_dir])
-        os.makedirs(self.work_dir)
+        self.data_dir = "./data/%s/%s" % (self.device_name, self.circuit_name)
+        if os.path.exists(self.data_dir):
+            subprocess.run(["rm", "-rf", self.data_dir])
+        os.makedirs(self.data_dir)
 
     def run(self, visualize: bool) -> None:
         print("Step 0: convert the device topology graph to SCOTCH format")
         device_graph = arquin.converters.edges_to_source_graph(
             edges=self.device.coarse_graph.edges, vertex_weights=None
         )
-        arquin.converters.write_target_graph_file(
-            graph=device_graph, save_dir=self.work_dir, fname=self.device_name
-        )
+        arquin.converters.write_target_graph_file(graph=device_graph, save_dir=self.data_dir)
 
         remaining_virtual_circuit = copy.deepcopy(self.virtual_circuit)
         recursion_counter = 0
@@ -50,15 +48,9 @@ class ModularCompiler:
             circuit_graph = arquin.converters.edges_to_source_graph(
                 edges=edges, vertex_weights=vertex_weights
             )
-            arquin.converters.write_source_graph_file(
-                graph=circuit_graph, save_dir=self.work_dir, fname=self.circuit_name
-            )
-            arquin.distribute.distribute_gates(
-                source_fname=self.circuit_name, target_fname=self.device_name
-            )
-            distribution = arquin.distribute.read_distribution_file(
-                distribution_fname="%s_%s" % (self.circuit_name, self.device_name)
-            )
+            arquin.converters.write_source_graph_file(graph=circuit_graph, save_dir=self.data_dir)
+            arquin.distribute.distribute_gates(data_dir=self.data_dir)
+            distribution = arquin.distribute.read_distribution_file(data_dir=self.data_dir)
             print(distribution)
             print("-" * 10)
 
@@ -76,6 +68,7 @@ class ModularCompiler:
                     )
                 )
             print("-" * 10)
+            exit(1)
 
             print("Step 3: Insert global communication")
             self.global_comm(recursion_counter)

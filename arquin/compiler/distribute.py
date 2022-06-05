@@ -7,19 +7,19 @@ from typing import Dict, List, Tuple
 import arquin
 
 
-def distribute_gates(source_fname: str, target_fname: str) -> None:
+def distribute_gates(data_dir: str) -> None:
     subprocess.call(
         [
             "/home/weit/scotch/build/bin/gmap",
-            "workspace/%s_source.txt" % source_fname,
-            "workspace/%s_target.txt" % target_fname,
-            "workspace/%s_%s_distribution.txt" % (source_fname, target_fname),
+            "%s/source.txt" % data_dir,
+            "%s/target.txt" % data_dir,
+            "%s/distribution.txt" % data_dir,
         ]
     )
 
 
-def read_distribution_file(distribution_fname: str) -> np.ndarray:
-    file = open("workspace/%s_distribution.txt" % distribution_fname, "r")
+def read_distribution_file(data_dir: str) -> np.ndarray:
+    file = open("%s/distribution.txt" % data_dir, "r")
     lines = file.readlines()
     file.close()
     distribution = np.zeros(len(lines[1:]), dtype=int)

@@ -70,24 +70,24 @@ def circuit_to_graph(circuit):
     return vertex_weights, edges
 
 
-def write_source_graph_file(graph, save_dir, fname):
-    graph_file = open("%s/%s_source.txt" % (save_dir, fname), "w")
+def write_source_graph_file(graph, save_dir):
+    graph_file = open("%s/source.txt" % (save_dir), "w")
     for line_num in range(len(graph)):
         graph_file.write(graph[line_num])
     graph_file.close()
-    # subprocess.call(["/home/weit/scotch/build/bin/gtst", "%s/%s_source.txt" % (save_dir, fname)])
+    # subprocess.call(["/home/weit/scotch/build/bin/gtst", "%s/source.txt" % (save_dir)])
 
 
-def write_target_graph_file(graph, save_dir, fname):
-    write_source_graph_file(graph=graph, save_dir=save_dir, fname=fname)
+def write_target_graph_file(graph, save_dir):
+    write_source_graph_file(graph=graph, save_dir=save_dir)
     subprocess.call(
         [
             "/home/weit/scotch/build/bin/amk_grf",
-            "%s/%s_source.txt" % (save_dir, fname),
-            "%s/%s_target.txt" % (save_dir, fname),
+            "%s/source.txt" % save_dir,
+            "%s/target.txt" % save_dir,
         ]
     )
-    subprocess.call(["rm", "%s/%s_source.txt" % (save_dir, fname)])
+    subprocess.call(["rm", "%s/source.txt" % save_dir])
 
 
 def edges_to_coupling_map(edges):
