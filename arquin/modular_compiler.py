@@ -22,7 +22,6 @@ class ModularCompiler:
         self.circuit_name = circuit_name
         self.device = device
         self.device_name = device_name
-        self.physical_circuit = qiskit.QuantumCircuit(self.device.size)
         self.data_dir = "./data/%s/%s" % (self.device_name, self.circuit_name)
         if os.path.exists(self.data_dir):
             subprocess.run(["rm", "-rf", self.data_dir])
@@ -77,14 +76,11 @@ class ModularCompiler:
                 print(module.virtual_circuit)
             print("-" * 10)
 
-            print("Step 5: local compile")
+            print("Step 5: local compile and combine")
             self.local_compile()
+            self.combine()
             print("-" * 10)
             exit(1)
-
-            print("Step 6: combine")
-            self.combine()
-            print("output circuit depth {:d}".format(self.physical_circuit.depth()))
             if visualize:
                 arquin.visualize.plot_recursion(
                     recursion_counter=recursion_counter,
@@ -121,21 +117,22 @@ class ModularCompiler:
         for module in self.device.modules:
             module.compile()
             module.update_mapping()
-            print("Module {:d}".format(module.index))
-            print(module.physical_circuit)
-            print("mp_2_mv_mapping : {}".format(module.mp_2_mv_mapping))
 
     def combine(self) -> None:
-        print(self.device.mp_2_dp_mapping)
         for module in self.device.modules:
-            print(module.physical_circuit)
-            device_physical_qargs = [
-                self.physical_circuit.qubits[
-                    self.device.mp_2_dp_mapping[(module.module_index, module_physical_qubit)]
+            device_physical_qubits = [
+                self.device.physical_circuit.qubits[
+                    self.device.mp_2_dp_mapping[(module.index, module_physical_qubit)]
                 ]
                 for module_physical_qubit in range(module.size)
             ]
-            print(device_physical_qargs)
-            self.physical_circuit.compose(
-                module.physical_circuit, qubits=device_physical_qargs, inplace=True
+            print("Module {:d} --> device physical qubits {}".format(module.index,device_physical_qubits))
+            print(module.physical_circuit)
+            self.device.physical_circuit.compose(
+                module.physical_circuit, qubits=device_physical_qubits, inplace=True
             )
+        print("Combined into")
+        print(self.device.physical_circuit)
+        print("Depth {:d}. Size {:d}.".format(
+            self.device.physical_circuit.depth(),
+            self.device.physical_circuit.size()))

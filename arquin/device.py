@@ -56,6 +56,7 @@ class Device(FrozenClass):
         self.dp_2_dv_mapping = None
         self.dv_2_dp_mapping = None
         self.virtual_circuit = None
+        self.physical_circuit = qiskit.QuantumCircuit(self.size)
         self._freeze()
 
     def _build_coarse_device_graph(self, global_edges) -> nx.Graph:
