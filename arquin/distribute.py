@@ -7,19 +7,19 @@ from typing import Dict, List, Tuple
 import arquin
 
 
-def distribute_gates(source_fname: str, target_fname: str) -> None:
+def distribute_gates(data_dir: str) -> None:
     subprocess.call(
         [
             "/home/weit/scotch/build/bin/gmap",
-            "workspace/%s_source.txt" % source_fname,
-            "workspace/%s_target.txt" % target_fname,
-            "workspace/%s_%s_distribution.txt" % (source_fname, target_fname),
+            "%s/source.txt" % data_dir,
+            "%s/target.txt" % data_dir,
+            "%s/distribution.txt" % data_dir
         ]
     )
 
 
-def read_distribution_file(distribution_fname: str) -> np.ndarray:
-    file = open("workspace/%s_distribution.txt" % distribution_fname, "r")
+def read_distribution_file(data_dir: str) -> np.ndarray:
+    file = open("%s/distribution.txt" % data_dir, "r")
     lines = file.readlines()
     file.close()
     distribution = np.zeros(len(lines[1:]), dtype=int)
@@ -32,39 +32,33 @@ def read_distribution_file(distribution_fname: str) -> np.ndarray:
 
 
 def assign_device_virtual_qubits(
-    distribution: np.ndarray, circuit: qiskit.QuantumCircuit, device: arquin.device.Device
+    gate_distribution: np.ndarray, device: arquin.device.Device
 ) -> None:
-    dag = qiskit.converters.circuit_to_dag(circuit)
+    dag = qiskit.converters.circuit_to_dag(device.virtual_circuit)
     topological_op_nodes = list(dag.topological_op_nodes())
-    device.dv_2_mv_mapping = {}
-    module_virtual_qubit_counter = {module.module_index: 0 for module in device.modules}
+    qubit_distribution = {module.index: [] for module in device.modules}
     for device_virtual_qubit in dag.qubits:
         gates_on_qubit = list(dag.nodes_on_wire(device_virtual_qubit, only_ops=True))
         if len(gates_on_qubit) > 0:
             first_gate = gates_on_qubit[0]
             gate_idx = topological_op_nodes.index(first_gate)
-            module_idx = distribution[gate_idx]
-            module = device.modules[module_idx]
-            module_virtual_qubit = module.virtual_circuit.qubits[
-                module_virtual_qubit_counter[module_idx]
-            ]
-            module_virtual_qubit_counter[module_idx] += 1
-            device.dv_2_mv_mapping[device_virtual_qubit] = (module_idx, module_virtual_qubit)
-    device.mv_2_dv_mapping = arquin.converters.reverse_dict(device.dv_2_mv_mapping)
+            module_idx = gate_distribution[gate_idx]
+            qubit_distribution[module_idx].append(device_virtual_qubit)
+    return qubit_distribution
 
 
 def construct_module_virtual_circuits(
-    circuit: qiskit.QuantumCircuit, device: arquin.device.Device, distribution: np.ndarray
+    device: arquin.device.Device, gate_distribution: np.ndarray
 ) -> Tuple[qiskit.QuantumCircuit, List]:
     """
     Construct the most number of gates for each module that can be scheduled without global comms
     1. Assign the qubits to each module based on front layer gates
     2. Assign as many gates as possible for each module
     """
-    remaining_dag = qiskit.converters.circuit_to_dag(circuit)
+    remaining_dag = qiskit.converters.circuit_to_dag(device.virtual_circuit)
     topological_op_nodes = list(remaining_dag.topological_op_nodes())
     inactive_qubits = set()
-    for gate, module_idx in zip(topological_op_nodes, distribution):
+    for gate, module_idx in zip(topological_op_nodes, gate_distribution):
         device_virtual_qargs = gate.qargs
         module_virtual_qargs = [
             device.dv_2_mv_mapping[device_virtual_qubit]
@@ -84,7 +78,7 @@ def construct_module_virtual_circuits(
             module_virtual_qargs = [
                 module_virtual_qubit[1] for module_virtual_qubit in module_virtual_qargs
             ]
-            module.add_virtual_gate(gate.op, module_virtual_qargs)
+            module.virtual_circuit.append(gate.op, qargs=module_virtual_qargs)
             remaining_dag.remove_op_node(gate)
         else:
             """

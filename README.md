@@ -22,6 +22,3 @@ To do this you can run all of the checks with `./check/all`.
 - [x] Local compile and combine
 - [ ] Global communication. A*?
 - [ ] Load imbalance for qubits
-
-## DEBUG
-- [ ] Make sure partition and topological op node have the same order
