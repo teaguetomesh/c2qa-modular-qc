@@ -1,5 +1,6 @@
 import networkx as nx
 import qiskit
+import random
 
 from qiskit_helper_functions.benchmarks import generate_circ
 
@@ -16,13 +17,16 @@ if __name__ == "__main__":
     )
     device.plot(save_dir="figures")
 
+    seed = random.randint(0,int(1e8))
+    seed = 14737345
+    print("seed = {}".format(seed))
     circuit = generate_circ(
         num_qubits=device.size,
         depth=device.size,
         circuit_type="random",
         reg_name="q",
         connected_only=True,
-        seed=None,
+        seed=seed,
     )
 
     coupling_map = arquin.converters.edges_to_coupling_map(device.fine_graph.edges)

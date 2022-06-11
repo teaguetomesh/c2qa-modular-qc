@@ -53,8 +53,6 @@ class Device(FrozenClass):
         self.size = sum([module.size for module in self.modules])
         self.dv_2_mv_mapping = None
         self.mv_2_dv_mapping = None
-        self.dp_2_dv_mapping = None
-        self.dv_2_dp_mapping = None
         self.virtual_circuit = None
         self.physical_circuit = qiskit.QuantumCircuit(self.size)
         self._freeze()

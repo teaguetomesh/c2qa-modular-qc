@@ -51,9 +51,11 @@ class ModularCompiler:
             arquin.distribute.distribute_gates(data_dir=self.data_dir)
             gate_distribution = arquin.distribute.read_distribution_file(data_dir=self.data_dir)
             print(gate_distribution)
+            assert len(circuit_graph)-3 == self.device.virtual_circuit.size()
             print("-" * 10)
 
             print("Step 2: Assign the device_virtual_qubit to modules")
+            # TODO: debug #qubits exceed module capacity
             qubit_distribution = arquin.distribute.assign_device_virtual_qubits(
                 gate_distribution=gate_distribution,
                 device=self.device,
@@ -80,16 +82,7 @@ class ModularCompiler:
             self.local_compile()
             self.combine()
             print("-" * 10)
-            exit(1)
-            if visualize:
-                arquin.visualize.plot_recursion(
-                    recursion_counter=recursion_counter,
-                    device=self.device,
-                    remaining_virtual_circuit=remaining_virtual_circuit,
-                    distribution=distribution,
-                    output_circuit=self.physical_circuit,
-                )
-            remaining_virtual_circuit = next_virtual_circuit
+            self.device.virtual_circuit = next_virtual_circuit
             recursion_counter += 1
 
     def global_comm(self, qubit_distribution: int) -> None:
@@ -106,6 +99,13 @@ class ModularCompiler:
             self.device.dv_2_mv_mapping = arquin.converters.reverse_dict(self.device.mv_2_dv_mapping)
         else:
             print("Need global routing")
+            print(self.device.dp_2_mp_mapping)
+            for module in self.device.modules:
+                print("Module {:d}".format(module.index))
+                print("mp_2_mv_mapping {}".format(module.mp_2_mv_mapping))
+                print("mv_2_dv_mapping {}".format(module.mv_2_dv_mapping))
+                print("target {}".format(qubit_distribution[module.index]))
+            print(self.device.mv_2_dv_mapping)
             exit(1)
         for device_virtual_qubit in self.device.virtual_circuit.qubits:
             module_index, module_virtual_qubit = self.device.dv_2_mv_mapping[device_virtual_qubit]

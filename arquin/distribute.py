@@ -13,7 +13,7 @@ def distribute_gates(data_dir: str) -> None:
             "/home/weit/scotch/build/bin/gmap",
             "%s/source.txt" % data_dir,
             "%s/target.txt" % data_dir,
-            "%s/distribution.txt" % data_dir,
+            "%s/distribution.txt" % data_dir
         ]
     )
 
